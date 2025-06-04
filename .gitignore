@@ -21,10 +21,7 @@ wheels/
 *.egg
 
 # Virtual Environment
-.env
 .venv/
-venv/
-ENV/
 
 # IDE
 .vscode/
@@ -34,11 +31,12 @@ ENV/
 
 # Testing
 .pytest_cache/
-.coverage
-htmlcov/
 
-# Type checking
+# Type Checking
 .mypy_cache/
+
+# Pre-commit
+.pre-commit-config.yaml
 
 # Logs
 *.log

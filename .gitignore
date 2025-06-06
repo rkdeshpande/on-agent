@@ -21,25 +21,41 @@ wheels/
 *.egg
 
 # Virtual Environment
-.venv/
+.env
+.venv
+env/
+venv/
+ENV/
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
 
 # Testing
 .pytest_cache/
+.coverage
+htmlcov/
+
+# Project specific
+data/submissions/
+data/negotiations/
+data/rationales/
+data/contexts/
+data/*.json
+data/*.yaml
+data/*.yml
+
+# Logs
+*.log
+logs/
 
 # Type Checking
 .mypy_cache/
 
 # Pre-commit
 .pre-commit-config.yaml
-
-# Logs
-*.log
 
 # Database
 *.sqlite

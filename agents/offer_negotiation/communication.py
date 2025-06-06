@@ -1,4 +1,4 @@
-def get_past_rationale(deal_id: str) -> dict:
+def get_past_rationale(deal_id: str) -> str:
     """
     Simulates retrieving past rationale from the Codified Intelligence agent.
 
@@ -6,7 +6,7 @@ def get_past_rationale(deal_id: str) -> dict:
         deal_id: The ID of the deal to fetch rationale for
 
     Returns:
-        Dictionary containing past rationale (empty list for now)
+        String containing past rationale (empty string for now)
     """
     print(f"Fetching past rationale for deal_id: {deal_id}")
-    return {"past_rationale": []}
+    return ""  # Empty string for now, will be replaced with actual rationale

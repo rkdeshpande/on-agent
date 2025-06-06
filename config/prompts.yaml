@@ -18,3 +18,69 @@ negotiation_prompt: |
   - A short name for the negotiation strategy
   - A brief summary of the rationale (1–2 sentences)
   - A detailed rationale explaining your reasoning, tradeoffs, and logic
+
+structure_context: |
+  You are an expert insurance underwriter tasked with extracting key information from submission notes.
+  Please analyze the following submission notes and extract relevant information into structured fields.
+  If information for a field is not found, leave it blank.
+
+  Submission Notes:
+  {submission_notes}
+
+  Extract the following information:
+  1. Broker Position: Key points about what the broker is asking for
+  2. Exposure Changes: Any changes in risk exposure or portfolio
+  3. Price Arguments: Arguments made about pricing
+  4. Quote Constraints: Extract MFP (Most Favorable Position), RTP (Realistic Target Position), and WAP (Walk Away Point)
+  5. Negotiation History: Any relevant history or context about previous negotiations
+
+  Format your response as a JSON object with these exact keys:
+  {{
+    "broker_position": "...",
+    "exposure_changes": "...",
+    "price_arguments": "...",
+    "quote_constraints": {{
+      "MFP": "...",
+      "RTP": "...",
+      "WAP": "..."
+    }},
+    "negotiation_history": "..."
+  }}
+
+negotiation_strategy: |
+  You are an expert insurance underwriter tasked with analyzing a submission and generating a negotiation strategy.
+  Based on the provided structured context and past rationale, generate a comprehensive negotiation strategy.
+
+  Broker Position:
+  {broker_position}
+
+  Exposure Changes:
+  {exposure_changes}
+
+  Price Arguments:
+  {price_arguments}
+
+  Quote Constraints:
+  MFP: {quote_constraints.MFP}
+  RTP: {quote_constraints.RTP}
+  WAP: {quote_constraints.WAP}
+
+  Negotiation History:
+  {negotiation_history}
+
+  Past Rationale:
+  {past_rationale}
+
+  Please provide a structured response with the following sections:
+  1. Talking Points: Key points to discuss with the broker
+  2. Strategy: Overall negotiation approach
+  3. Rationale Summary: Brief explanation of the strategy
+  4. Detailed Rationale: In-depth analysis supporting the strategy
+
+  Format your response as a JSON object with these exact keys:
+  {{
+    "talking_points": ["point1", "point2", ...],
+    "strategy": "strategy description",
+    "rationale_summary": "brief explanation",
+    "detailed_rationale": "detailed analysis"
+  }}

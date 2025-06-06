@@ -2,6 +2,9 @@ import yaml
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 
+# Initialize model once at module level
+model = ChatOllama(model="mistral")
+
 
 def load_prompt_template():
     with open("config/prompts.yaml", "r") as f:
@@ -9,26 +12,36 @@ def load_prompt_template():
     return prompts["negotiation_strategy"]
 
 
-def generate_negotiation_strategy(past_rationale: list) -> dict:
-    # Load the prompt template
+def generate_negotiation_strategy(state: dict) -> dict:
+    """
+    Generate a negotiation strategy based on the structured context.
+
+    Args:
+        state: The current state of the agent
+
+    Returns:
+        Dictionary containing the strategy and rationale
+    """
+    # Load and format the prompt
     prompt_template = load_prompt_template()
     prompt = ChatPromptTemplate.from_template(prompt_template)
-
-    # Initialize the model
-    model = ChatOllama(model="llama2")
-
-    # Construct the prompt with past rationale
-    formatted_prompt = prompt.format(past_rationale=past_rationale)
+    formatted_prompt = prompt.format(
+        structured_context=state["structured_context"],
+        past_rationale=state["past_rationale"],
+    )
 
     # Generate the response
+    print("\nGenerating negotiation strategy...")
     response = model.invoke(formatted_prompt)
     print(f"Generated response: {response}")
 
-    # Parse the response to extract the required fields
-    # This is a placeholder for actual parsing logic
+    # Parse the response into the structured format
+    # For now, we'll return a placeholder structure
+    # TODO: Add proper JSON parsing
     return {
-        "talking_points": ["Point 1", "Point 2"],
-        "strategy": "Strategy details",
-        "rationale_summary": "Summary of rationale",
-        "detailed_rationale": "Detailed explanation",
+        "strategy": "Placeholder strategy",
+        "talking_points": ["Point 1", "Point 2", "Point 3"],
+        "rationale_summary": "Placeholder rationale summary",
+        "detailed_rationale": "Placeholder detailed rationale",
+        "ci_log_success": True,
     }

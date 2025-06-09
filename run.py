@@ -12,6 +12,11 @@ from agents.offer_negotiation.agent import run_agent
 load_dotenv(Path("config/secrets.env"))
 assert os.getenv("OPENAI_API_KEY"), "OPENAI_API_KEY is not set"
 
+# Load submission directory from environment
+SUBMISSION_DIR = os.getenv("SUBMISSION_DIR")
+if not SUBMISSION_DIR:
+    raise ValueError("SUBMISSION_DIR environment variable not set")
+
 
 # Configure logging
 def setup_logging():
@@ -132,7 +137,11 @@ def main():
 
         # Run the agent and capture timing
         start_time = time.time()
-        result = run_agent(deal_id="TEST456", submission_id="ABC123")
+        result = run_agent(
+            deal_id="TEST456",
+            submission_id="ABC123",
+            submission_dir=SUBMISSION_DIR,
+        )
         end_time = time.time()
 
         # Debug logging to see what we got back

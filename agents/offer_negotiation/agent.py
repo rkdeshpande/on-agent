@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Optional, TypedDict
+from pathlib import Path
+from typing import Optional, TypedDict, Union
 
 import yaml
 from langchain_core.prompts import ChatPromptTemplate
@@ -36,6 +37,7 @@ class StructuredContext(TypedDict):
 class AgentState(TypedDict):
     deal_id: str
     submission_id: str | None
+    submission_dir: Optional[Union[str, Path]]
     past_rationale: str
     submission_notes: dict[str, str]
     structured_context: StructuredContext | None
@@ -74,7 +76,11 @@ def fetch_context(state: AgentState) -> AgentState:
     submission_notes = {}
     if "submission_id" in state and state["submission_id"]:
         logger.info(f"Loading submission context for ID: {state['submission_id']}")
-        submission_notes = load_submission_context(state["submission_id"])
+        # Use custom submission directory if provided
+        submission_dir = state.get("submission_dir")
+        submission_notes = load_submission_context(
+            state["submission_id"], submission_dir=submission_dir
+        )
         logger.info(f"Loaded {len(submission_notes)} files")
 
     # Return the full state, merging past_rationale and submission_notes
@@ -351,13 +357,19 @@ def create_agent() -> StateGraph:
     return workflow.compile()
 
 
-def run_agent(deal_id: str, submission_id: str = None) -> AgentState:
+def run_agent(
+    deal_id: str, submission_id: str, submission_dir: Optional[Union[str, Path]] = None
+) -> AgentState:
     """
     Run the negotiation agent with the given input.
 
     Args:
         deal_id: The ID of the deal
-        submission_id: Optional ID of the submission to load notes from
+        submission_id: ID of the submission to load notes from.
+                      This is used for logging and state tracking,
+                      independent of the directory path.
+        submission_dir: Optional custom path to the submission directory.
+                       If not provided, defaults to "data/submissions/{submission_id}"
 
     Returns:
         Dictionary containing the final state after running the graph
@@ -365,6 +377,7 @@ def run_agent(deal_id: str, submission_id: str = None) -> AgentState:
     input_data: AgentState = {
         "deal_id": deal_id,
         "submission_id": submission_id,
+        "submission_dir": submission_dir,
         "past_rationale": "",
         "submission_notes": {},
         "structured_context": None,

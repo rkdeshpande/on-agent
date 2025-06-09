@@ -1,12 +1,18 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def get_past_rationale(deal_id: str) -> str:
     """
-    Simulates retrieving past rationale from the Codified Intelligence agent.
+    Get past rationale for a deal.
 
     Args:
-        deal_id: The ID of the deal to fetch rationale for
+        deal_id: The ID of the deal
 
     Returns:
-        String containing past rationale (empty string for now)
+        Past rationale as a string, or empty string if none found
     """
-    print(f"Fetching past rationale for deal_id: {deal_id}")
-    return ""  # Empty string for now, will be replaced with actual rationale
+    logger.info(f"Fetching past rationale for deal_id: {deal_id}")
+    # TODO: Implement actual rationale fetching
+    return ""

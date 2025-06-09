@@ -1,23 +1,35 @@
+import logging
+import time
 from typing import Optional, TypedDict
 
 import yaml
-from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph
 
 from .communication import get_past_rationale
 from .memory import load_submission_context
 from .reasoning import generate_negotiation_strategy
+from .utils import get_llm
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Initialize model once at module level
-model = ChatOllama(model="mistral")
+model = get_llm()
+
+# Warm up the model
+logger.info("Warming up model...")
+model.invoke("Say OK.")
+logger.info("Model warm-up complete")
 
 
 class StructuredContext(TypedDict):
     broker_position: str
     exposure_changes: str
     price_arguments: str
-    quote_constraints: dict[str, str]
+    quote_constraints_MFP: str
+    quote_constraints_RTP: str
+    quote_constraints_WAP: str
     negotiation_history: str
 
 
@@ -32,6 +44,7 @@ class AgentState(TypedDict):
     rationale_summary: str | None
     detailed_rationale: str | None
     ci_log_success: bool | None
+    node_timings: dict[str, dict[str, float]]
 
 
 def load_prompt_template(prompt_name: str) -> str:
@@ -43,14 +56,15 @@ def load_prompt_template(prompt_name: str) -> str:
 
 def fetch_context(state: AgentState) -> AgentState:
     """Fetch relevant context for the negotiation."""
-    print("\n=== Executing fetch_context node ===")
-    print(f"Input state: {state}")
+    start_time = time.time()
+    logger.info("=== Executing fetch_context node ===")
+    logger.debug(f"Input state: {state}")
 
     # Get past rationale for the deal
     deal_id = state["deal_id"]
-    print(f"\nFetching past rationale for deal: {deal_id}")
+    logger.info(f"Fetching past rationale for deal: {deal_id}")
     past_rationale = get_past_rationale(deal_id)
-    print(
+    logger.info(
         f"Past rationale received: {past_rationale[:100]}..."
         if past_rationale
         else "No past rationale found"
@@ -59,33 +73,37 @@ def fetch_context(state: AgentState) -> AgentState:
     # Load submission context if submission_id is provided
     submission_notes = {}
     if "submission_id" in state and state["submission_id"]:
-        print(f"\nLoading submission context for ID: {state['submission_id']}")
+        logger.info(f"Loading submission context for ID: {state['submission_id']}")
         submission_notes = load_submission_context(state["submission_id"])
-        print(f"Loaded {len(submission_notes)} files")
+        logger.info(f"Loaded {len(submission_notes)} files")
 
     # Return the full state, merging past_rationale and submission_notes
     result = {
         **state,
         "past_rationale": past_rationale,
         "submission_notes": submission_notes,
+        "node_timings": {"fetch_context": {"start": start_time, "end": time.time()}},
     }
-    print("\n=== Completed fetch_context node ===\n")
+    logger.info("=== Completed fetch_context node ===")
     return result
 
 
-def process_file_content(filename: str, content: str) -> Optional[StructuredContext]:
+def process_file_content(
+    filename: str, content: str, state: AgentState
+) -> Optional[StructuredContext]:
     """
     Process a single file's content to extract structured information.
 
     Args:
         filename: Name of the file being processed
         content: Content of the file
+        state: Current agent state for tracking timings
 
     Returns:
         StructuredContext with extracted information, or None if processing failed
     """
     if not content.strip():
-        print(f"Skipping empty file: {filename}")
+        logger.warning(f"Skipping empty file: {filename}")
         return None
 
     try:
@@ -96,10 +114,24 @@ def process_file_content(filename: str, content: str) -> Optional[StructuredCont
             submission_notes=content, filename=filename  # Pass filename for debugging
         )
 
+        # Log prompt length
+        prompt_length = len(str(formatted_prompt))
+        logger.debug(f"Prompt length: {prompt_length} characters")
+
         # Generate the response
-        print(f"\nProcessing file: {filename}")
+        logger.info(f"Processing file: {filename}")
+        model_start = time.time()
         response = model.invoke(formatted_prompt)
-        print(f"Generated response for {filename}: {response}")
+        model_end = time.time()
+        logger.debug(f"Generated response for {filename}: {response}")
+
+        # Track model timing
+        if "model_timings" not in state:
+            state["model_timings"] = {}
+        state["model_timings"][f"process_file_{filename}"] = {
+            "start": model_start,
+            "end": model_end,
+        }
 
         # Parse the response into the structured format
         # For now, we'll return a placeholder structure
@@ -108,15 +140,13 @@ def process_file_content(filename: str, content: str) -> Optional[StructuredCont
             "broker_position": (f"From {filename}: Extracted broker position"),
             "exposure_changes": (f"From {filename}: Extracted exposure changes"),
             "price_arguments": (f"From {filename}: Extracted price arguments"),
-            "quote_constraints": {
-                "MFP": f"From {filename}: Extracted MFP",
-                "RTP": f"From {filename}: Extracted RTP",
-                "WAP": f"From {filename}: Extracted WAP",
-            },
+            "quote_constraints_MFP": f"From {filename}: Extracted MFP",
+            "quote_constraints_RTP": f"From {filename}: Extracted RTP",
+            "quote_constraints_WAP": f"From {filename}: Extracted WAP",
             "negotiation_history": (f"From {filename}: Extracted negotiation history"),
         }
     except Exception as e:
-        print(f"Error processing file {filename}: {str(e)}")
+        logger.error(f"Error processing file {filename}: {str(e)}")
         return None
 
 
@@ -135,7 +165,9 @@ def merge_structured_contexts(contexts: list[StructuredContext]) -> StructuredCo
             "broker_position": "",
             "exposure_changes": "",
             "price_arguments": "",
-            "quote_constraints": {"MFP": "", "RTP": "", "WAP": ""},
+            "quote_constraints_MFP": "",
+            "quote_constraints_RTP": "",
+            "quote_constraints_WAP": "",
             "negotiation_history": "",
         }
 
@@ -144,7 +176,9 @@ def merge_structured_contexts(contexts: list[StructuredContext]) -> StructuredCo
         "broker_position": [],
         "exposure_changes": [],
         "price_arguments": [],
-        "quote_constraints": {"MFP": [], "RTP": [], "WAP": []},
+        "quote_constraints_MFP": [],
+        "quote_constraints_RTP": [],
+        "quote_constraints_WAP": [],
         "negotiation_history": [],
     }
 
@@ -161,8 +195,10 @@ def merge_structured_contexts(contexts: list[StructuredContext]) -> StructuredCo
 
         # Handle quote constraints
         for key in ["MFP", "RTP", "WAP"]:
-            if ctx["quote_constraints"][key]:
-                merged["quote_constraints"][key].append(ctx["quote_constraints"][key])
+            if ctx[f"quote_constraints_{key}"]:
+                merged[f"quote_constraints_{key}"].append(
+                    ctx[f"quote_constraints_{key}"]
+                )
 
     # Join all values with separators
     result = {
@@ -181,23 +217,21 @@ def merge_structured_contexts(contexts: list[StructuredContext]) -> StructuredCo
             if merged["price_arguments"]
             else ""
         ),
-        "quote_constraints": {
-            "MFP": (
-                "\n---\n".join(merged["quote_constraints"]["MFP"])
-                if merged["quote_constraints"]["MFP"]
-                else ""
-            ),
-            "RTP": (
-                "\n---\n".join(merged["quote_constraints"]["RTP"])
-                if merged["quote_constraints"]["RTP"]
-                else ""
-            ),
-            "WAP": (
-                "\n---\n".join(merged["quote_constraints"]["WAP"])
-                if merged["quote_constraints"]["WAP"]
-                else ""
-            ),
-        },
+        "quote_constraints_MFP": (
+            "\n---\n".join(merged["quote_constraints_MFP"])
+            if merged["quote_constraints_MFP"]
+            else ""
+        ),
+        "quote_constraints_RTP": (
+            "\n---\n".join(merged["quote_constraints_RTP"])
+            if merged["quote_constraints_RTP"]
+            else ""
+        ),
+        "quote_constraints_WAP": (
+            "\n---\n".join(merged["quote_constraints_WAP"])
+            if merged["quote_constraints_WAP"]
+            else ""
+        ),
         "negotiation_history": (
             "\n---\n".join(merged["negotiation_history"])
             if merged["negotiation_history"]
@@ -210,69 +244,93 @@ def merge_structured_contexts(contexts: list[StructuredContext]) -> StructuredCo
         "broker_position",
         "exposure_changes",
         "price_arguments",
-        "quote_constraints",
+        "quote_constraints_MFP",
+        "quote_constraints_RTP",
+        "quote_constraints_WAP",
         "negotiation_history",
     ]
     for field in required_fields:
         assert field in result, f"Missing required field: {field}"
-    assert all(
-        key in result["quote_constraints"] for key in ["MFP", "RTP", "WAP"]
-    ), "Missing required quote constraint fields"
 
     return result
 
 
 def structure_context_node(state: AgentState) -> AgentState:
     """Structure the submission context into organized fields."""
-    print("\n=== Executing structure_context node ===")
-    print(f"Input state: {state}")
+    start_time = time.time()
+    logger.info("=== Executing structure_context node ===")
+    logger.debug(f"Input state: {state}")
 
     # Process each file individually
     structured_contexts = []
     for filename, content in state["submission_notes"].items():
-        result = process_file_content(filename, content)
+        result = process_file_content(filename, content, state)
         if result:
             structured_contexts.append(result)
 
     # Merge all results
-    print("\nMerging structured contexts...")
+    logger.info("Merging structured contexts...")
     merged_context = merge_structured_contexts(structured_contexts)
-    print(f"Merged context: {merged_context}")
+    logger.debug(f"Merged context: {merged_context}")
 
     # Return the full state with structured context
-    result = {**state, "structured_context": merged_context}
-    print("\n=== Completed structure_context node ===\n")
+    result = {
+        **state,
+        "structured_context": merged_context,
+        "node_timings": {
+            **state.get("node_timings", {}),
+            "structure_context": {"start": start_time, "end": time.time()},
+        },
+    }
+    logger.info("=== Completed structure_context node ===")
     return result
 
 
 def reason(state: AgentState) -> AgentState:
     """Reason about the negotiation context."""
-    print("\n=== Executing reason node ===")
-    print(f"Input state: {state}")
+    start_time = time.time()
+    logger.info("=== Executing reason node ===")
+    logger.debug(f"Input state: {state}")
 
     # Generate negotiation strategy using structured context
-    print("\nGenerating negotiation strategy...")
+    logger.info("Generating negotiation strategy...")
     strategy_result = generate_negotiation_strategy(state)
-    print(f"Strategy generated: {strategy_result}")
+    logger.debug(f"Strategy generated: {strategy_result}")
 
     # Merge the strategy result with the existing state
-    result = {**state, **strategy_result}
-    print("\n=== Completed reason node ===\n")
+    result = {
+        **state,
+        **strategy_result,
+        "node_timings": {
+            **state.get("node_timings", {}),
+            "reason": {"start": start_time, "end": time.time()},
+        },
+    }
+    logger.info("=== Completed reason node ===")
     return result
 
 
 def log_rationale(state: AgentState) -> AgentState:
     """Log the reasoning process."""
-    print("\n=== Executing log_rationale node ===")
-    print(f"Input state: {state}")
-    print("\nFinal state summary:")
-    print(f"- Deal ID: {state['deal_id']}")
-    print(f"- Submission ID: {state['submission_id']}")
-    print(f"- Strategy: {state['strategy']}")
-    print(f"- Talking Points: {state['talking_points']}")
-    print(f"- Rationale Summary: {state['rationale_summary']}")
-    print("\n=== Completed log_rationale node ===\n")
-    return state
+    start_time = time.time()
+    logger.info("=== Executing log_rationale node ===")
+    logger.debug(f"Input state: {state}")
+    logger.info("\nFinal state summary:")
+    logger.info(f"- Deal ID: {state['deal_id']}")
+    logger.info(f"- Submission ID: {state['submission_id']}")
+    logger.info(f"- Strategy: {state['strategy']}")
+    logger.info(f"- Talking Points: {state['talking_points']}")
+    logger.info(f"- Rationale Summary: {state['rationale_summary']}")
+
+    result = {
+        **state,
+        "node_timings": {
+            **state.get("node_timings", {}),
+            "log_rationale": {"start": start_time, "end": time.time()},
+        },
+    }
+    logger.info("=== Completed log_rationale node ===")
+    return result
 
 
 def create_agent() -> StateGraph:
@@ -315,6 +373,7 @@ def run_agent(deal_id: str, submission_id: str = None) -> AgentState:
         "rationale_summary": None,
         "detailed_rationale": None,
         "ci_log_success": None,
+        "node_timings": {},
     }
 
     agent = create_agent()

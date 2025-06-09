@@ -61,9 +61,9 @@ negotiation_strategy: |
   {price_arguments}
 
   Quote Constraints:
-  MFP: {quote_constraints.MFP}
-  RTP: {quote_constraints.RTP}
-  WAP: {quote_constraints.WAP}
+  - Most Favorable Position (MFP): {quote_constraints_MFP}
+  - Realistic Target Position (RTP): {quote_constraints_RTP}
+  - Walk Away Point (WAP): {quote_constraints_WAP}
 
   Negotiation History:
   {negotiation_history}

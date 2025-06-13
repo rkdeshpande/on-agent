@@ -1,26 +1,17 @@
-from typing import Annotated, Dict, List, TypedDict
+from typing import Dict, List
 
 from langgraph.graph import END, StateGraph
 
 from ...core.repositories.mock_deal_repository import MockDealRepository
 from ...knowledge.domain_documents import DocumentChunk, DocumentType
 from ...knowledge.domain_knowledge_base import DomainKnowledgeBase
-from .reasoning_node import ReasoningOutput, create_reasoning_node
-
-
-# Define our state type
-class AgentState(TypedDict):
-    deal_id: str
-    deal_context: Dict  # Will be populated by deal context node
-    domain_chunks: List[DocumentChunk]  # Will be populated by domain knowledge node
-    reasoning_steps: List[str]  # For tracking agent's thought process
-    reasoning_output: ReasoningOutput  # Will be populated by reasoning node
+from ..state import DealContextState, DomainKnowledgeState, create_reasoning_node
 
 
 def create_deal_context_node(repo: MockDealRepository):
     """Create a node that fetches deal context from the repository."""
 
-    def fetch_deal_context(state: AgentState) -> AgentState:
+    def fetch_deal_context(state: DealContextState) -> DealContextState:
         """Fetch deal context for the given deal_id."""
         deal_id = state["deal_id"]
         deal_context = repo.get_deal_context(deal_id)
@@ -36,7 +27,7 @@ def create_deal_context_node(repo: MockDealRepository):
 def create_domain_knowledge_node(kb: DomainKnowledgeBase):
     """Create a node that retrieves relevant domain knowledge chunks."""
 
-    def fetch_domain_knowledge(state: AgentState) -> AgentState:
+    def fetch_domain_knowledge(state: DomainKnowledgeState) -> DomainKnowledgeState:
         """Fetch relevant domain knowledge based on deal context."""
         # For now, we'll fetch all chunks of each type
         # In a real implementation, this would be more selective
@@ -55,7 +46,7 @@ def create_input_graph(
     """Create the input portion of our agent graph."""
 
     # Create the graph
-    workflow = StateGraph(AgentState)
+    workflow = StateGraph(DomainKnowledgeState)
 
     # Add nodes
     workflow.add_node("fetch_deal_context", create_deal_context_node(deal_repo))

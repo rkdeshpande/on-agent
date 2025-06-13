@@ -1,21 +1,22 @@
 import logging
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 from pprint import pformat
+from typing import Dict
 
+import yaml
 from dotenv import load_dotenv
 
 from agents.offer_negotiation.agent import run_agent
 
-# Load environment variables from secrets file
-load_dotenv(Path("config/secrets.env"))
-assert os.getenv("OPENAI_API_KEY"), "OPENAI_API_KEY is not set"
+# Load environment variables from secrets file (if it exists)
+load_dotenv(Path("config/secrets.env"), override=True)
 
-# Load submission directory from environment
-SUBMISSION_DIR = os.getenv("SUBMISSION_DIR")
-if not SUBMISSION_DIR:
-    raise ValueError("SUBMISSION_DIR environment variable not set")
+# Load model settings
+with open("config/model_settings.yaml", "r") as f:
+    model_settings = yaml.safe_load(f)
 
 
 # Configure logging
@@ -64,120 +65,69 @@ def format_timing(start_time: float, end_time: float) -> str:
 
 
 def display_results(result: dict):
-    """Display the results in a nice ASCII format."""
-    # Print a few newlines to separate from previous output
-    print("\n" * 2)
+    """Display the agent's results in a formatted way."""
+    print("\n" + "═" * 60)
+    print(" " * 20 + "NEGOTIATION STRATEGY" + " " * 20)
+    print("═" * 60 + "\n")
 
-    # Header
-    print("╔════════════════════════════════════════════════════════════╗")
-    print("║                    NEGOTIATION STRATEGY                     ║")
-    print("╚════════════════════════════════════════════════════════════╝")
-    print()
-
-    # Deal Info
     print("📊 Deal Information")
     print("──────────────────")
-    print(f"Deal ID: {result['deal_id']}")
-    print(f"Submission ID: {result['submission_id']}")
-    print()
+    print(f"Deal ID: {result['deal_id']}\n")
 
-    # Strategy
     print("🎯 Strategy")
     print("──────────")
-    print(result.get("strategy", "No strategy generated"))
-    print()
-
-    # Talking Points
-    print("💬 Key Talking Points")
-    print("───────────────────")
-    if result.get("talking_points"):
-        for i, point in enumerate(result["talking_points"], 1):
-            print(f"{i}. {point}")
+    strategy = result.get("reasoning_output", {}).get("strategy", "")
+    if strategy:
+        print(strategy)
     else:
-        print("No talking points generated")
+        print("No strategy generated")
     print()
 
-    # Rationale
     print("📝 Rationale")
     print("───────────")
-    print(result.get("rationale_summary", "No rationale summary generated"))
+    rationale = result.get("reasoning_output", {}).get("rationale", "")
+    if rationale:
+        print(rationale)
+    else:
+        print("No rationale generated")
     print()
-    print("Detailed Analysis:")
+
+    print("📚 Information Used")
+    print("─────────────────")
+    if "reasoning_output" in result:
+        print("\nDeal Fields Used:")
+        for field in result["reasoning_output"].get("used_deal_fields", []):
+            print(f"- {field}")
+
+        print("\nDomain Knowledge Used:")
+        for chunk in result["reasoning_output"].get("used_domain_chunks", []):
+            print(f"- {chunk['chunk_id']} ({chunk['type']}): {chunk['reason']}")
+    print()
+
+    print("🔄 Reasoning Steps")
     print("────────────────")
-    print(result.get("detailed_rationale", "No detailed rationale generated"))
+    for step in result.get("reasoning_steps", []):
+        print(f"- {step}")
     print()
 
-    # Performance Metrics
-    print("⚡ Performance Metrics")
-    print("───────────────────")
-    if "node_timings" in result:
-        start_time = result["node_timings"]["fetch_context"]["start"]
-        end_time = result["node_timings"]["log_rationale"]["end"]
-        print(f"Total execution time: {format_timing(start_time, end_time)}")
-        print("\nPer-node timings:")
-        for node, timing in result["node_timings"].items():
-            print(f"- {node}: {format_timing(timing['start'], timing['end'])}")
-
-    if "model_timings" in result:
-        print("\nModel response times:")
-        for call, timing in result["model_timings"].items():
-            print(f"- {call}: {format_timing(timing['start'], timing['end'])}")
-
-    print("\n" + "═" * 60)
+    print("═" * 60)
     print()  # Final newline for spacing
 
 
 def main():
     try:
-        # Start overall timing
-        overall_start = time.time()
+        # Example usage
+        logger.info("Starting agent with deal DEAL123...")
 
-        # Example usage with both deal_id and submission_id
-        logger.info("Starting agent with submission ABC123...")
-
-        # Run the agent and capture timing
-        start_time = time.time()
-        result = run_agent(
-            deal_id="TEST456",
-            submission_id="ABC123",
-            submission_dir=SUBMISSION_DIR,
-        )
-        end_time = time.time()
+        # Run the agent
+        result = run_agent(deal_id="DEAL123", model_settings=model_settings)
 
         # Debug logging to see what we got back
         logger.debug("Raw result from agent:")
         logger.debug(pformat(result))
 
-        # Check if the strategy generation was successful
-        if not result.get("ci_log_success", False):
-            logger.error("Strategy generation failed. Check logs for details.")
-            return
-
         # Display results in ASCII format
         display_results(result)
-
-        # Log timing information
-        logger.info("=== Performance Metrics ===")
-        logger.info(
-            f"Total execution time: {format_timing(overall_start, time.time())}"
-        )
-        logger.info(f"Agent execution time: {format_timing(start_time, end_time)}")
-
-        # Log node timings if available
-        if "node_timings" in result:
-            logger.info("\nPer-node timings:")
-            for node, timing in result["node_timings"].items():
-                logger.info(
-                    f"- {node}: {format_timing(timing['start'], timing['end'])}"
-                )
-
-        # Log model response times if available
-        if "model_timings" in result:
-            logger.info("\nModel response times:")
-            for call, timing in result["model_timings"].items():
-                logger.info(
-                    f"- {call}: {format_timing(timing['start'], timing['end'])}"
-                )
 
     except Exception as e:
         logger.error(f"Error running agent: {str(e)}")

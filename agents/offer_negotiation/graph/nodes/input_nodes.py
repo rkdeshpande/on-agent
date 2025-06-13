@@ -5,7 +5,7 @@ from langgraph.graph import END, StateGraph
 from ...core.repositories.mock_deal_repository import MockDealRepository
 from ...knowledge.domain_documents import DocumentChunk, DocumentType
 from ...knowledge.domain_knowledge_base import DomainKnowledgeBase
-from ..state import DealContextState, DomainKnowledgeState, create_reasoning_node
+from ..state import DealContextState, DomainKnowledgeState
 
 
 def create_deal_context_node(repo: MockDealRepository):

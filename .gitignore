@@ -67,4 +67,7 @@ logs/
 .LSOverride
 
 # PyPA
-__pypackages__/ 
+__pypackages__/
+
+# Scratch directory for testing
+scratch/ 

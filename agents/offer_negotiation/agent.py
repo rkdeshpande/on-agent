@@ -1,8 +1,5 @@
 import logging
-import time
-from typing import Dict, TypedDict
-
-from langgraph.graph import StateGraph
+import os
 
 from agents.offer_negotiation.core.repositories.mock_deal_repository import (
     MockDealRepository,
@@ -21,6 +18,11 @@ def run_agent(
     model_settings: dict = None,
 ) -> dict:
     """Run the graph-based negotiation agent and return the final state."""
+    # Set the project name for LangSmith
+    os.environ["LANGCHAIN_PROJECT"] = os.getenv(
+        "LANGCHAIN_PROJECT", "OfferNegotiationAgent"
+    )
+
     # Set up repositories and knowledge base (mock for now)
     deal_repo = MockDealRepository()
     knowledge_base = DomainKnowledgeBase()

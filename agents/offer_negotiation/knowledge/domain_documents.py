@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -57,15 +58,56 @@ class DocumentProcessor:
         for i, para in enumerate(paragraphs):
             chunk = DocumentChunk(
                 chunk_id=f"{document.doc_id}_chunk_{i}",
-                doc_id=document.doc_id,
-                type=document.type,
-                source_name=document.source_name,
-                content=para,
-                metadata={"paragraph_index": i},
+                text=para,
+                source_doc_id=document.doc_id,
+                metadata={
+                    "document_type": document.type,
+                    "source_name": document.source_name,
+                    "paragraph_index": i,
+                },
             )
             chunks.append(chunk)
 
         return chunks
+
+
+def load_domain_documents(
+    base_path: str = "data/domain_knowledge",
+) -> List[DomainDocument]:
+    """
+    Load domain documents from the specified directory.
+
+    Args:
+        base_path: Path to the directory containing domain knowledge documents
+
+    Returns:
+        List of loaded DomainDocument objects
+    """
+    documents = []
+    base_dir = Path(base_path)
+
+    # Map file names to document types
+    type_mapping = {
+        "coverage_limits.md": DocumentType.UNDERWRITING_GUIDELINE,
+        "negotiation_framework.md": DocumentType.NEGOTIATION_FRAMEWORK,
+        "regulatory_requirements.md": DocumentType.REGULATORY_REQUIREMENT,
+        "best_practices.md": DocumentType.BEST_PRACTICES,
+    }
+
+    # Load each document
+    for file_path in base_dir.glob("*.md"):
+        doc_type = type_mapping.get(file_path.name, DocumentType.BEST_PRACTICES)
+        with open(file_path, "r") as f:
+            content = f.read()
+            doc = DomainDocument(
+                doc_id=file_path.stem,
+                type=doc_type,
+                source_name=file_path.name,
+                content=content,
+            )
+            documents.append(doc)
+
+    return documents
 
 
 # Example usage

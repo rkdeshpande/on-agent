@@ -5,6 +5,10 @@ from agents.offer_negotiation.core.repositories.mock_deal_repository import (
     MockDealRepository,
 )
 from agents.offer_negotiation.graph.graph import create_agent_graph
+from agents.offer_negotiation.knowledge.domain_documents import (
+    DocumentProcessor,
+    load_domain_documents,
+)
 from agents.offer_negotiation.knowledge.domain_knowledge_base import DomainKnowledgeBase
 from agents.offer_negotiation.utils.logging import setup_logging
 
@@ -23,9 +27,17 @@ def run_agent(
         "LANGCHAIN_PROJECT", "OfferNegotiationAgent"
     )
 
-    # Set up repositories and knowledge base (mock for now)
+    # Set up repositories and knowledge base
     deal_repo = MockDealRepository()
     knowledge_base = DomainKnowledgeBase()
+
+    # Load and process domain documents
+    processor = DocumentProcessor()
+    documents = load_domain_documents()
+    for doc in documents:
+        chunks = processor.parse(doc)
+        knowledge_base.add_document_chunks(chunks)
+    logger.info(f"Loaded {len(documents)} domain documents into knowledge base")
 
     # Create the agent graph
     agent_graph = create_agent_graph(deal_repo, knowledge_base).compile()

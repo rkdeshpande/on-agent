@@ -47,6 +47,7 @@ class StrategyState(DomainKnowledgeState):
 
     strategy: str  # The generated strategy
     used_deal_fields: Set[str]  # Which deal fields were used
+    decision_basis: List[Dict[str, str]]  # Which heuristics were triggered and why
 
     def validate(self) -> bool:
         """Validate that required fields are present."""
@@ -72,6 +73,8 @@ class FinalState(StrategyState):
             "strategy": self["strategy"],
             "rationale": self["rationale"],
             "reasoning_steps": self["reasoning_steps"],
-            "used_domain_chunks": self["used_domain_chunks"],
-            "used_deal_fields": list(self["used_deal_fields"]),
+            "information_needs": self.get("information_needs", []),
+            "domain_chunks": self.get("domain_chunks", []),
+            "used_domain_chunks": self.get("used_domain_chunks", []),
+            "decision_basis": self.get("decision_basis", []),
         }

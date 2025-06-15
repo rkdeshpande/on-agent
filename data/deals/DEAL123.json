@@ -1,0 +1,48 @@
+{
+  "submission": {
+    "deal_id": "DEAL123",
+    "coverage_terms": "Commercial Property: $10M limit, $100K deductible",
+    "risk_profile": "High-risk manufacturing facility in flood zone",
+    "premium_structure": "Annual premium: $250K, Quarterly payments",
+    "line_of_business": "Commercial Property",
+    "territory": "Northeast"
+  },
+  "client_history": {
+    "client_id": "CLIENT456",
+    "prior_negotiations": [
+      "2023 Renewal: Negotiated 15% premium reduction",
+      "2022 New Business: Accepted initial terms with minor modifications"
+    ],
+    "relationship_notes": "Long-term client since 2018, good payment history",
+    "claim_summary": "One major claim in 2021 ($2.5M), no other claims"
+  },
+  "negotiation_context": {
+    "deal_id": "DEAL123",
+    "discussion_notes": [
+      "Initial meeting: Client concerned about flood coverage",
+      "Follow-up: Discussed risk mitigation options",
+      "Client requesting additional coverage for business interruption"
+    ],
+    "offers": [
+      "Initial offer: $250K premium, $100K deductible",
+      "Revised offer: $225K premium, $150K deductible"
+    ],
+    "objections": [
+      "Premium too high compared to market",
+      "Deductible increase not acceptable",
+      "Need additional coverage for business interruption"
+    ]
+  },
+  "comparable_deals": [
+    {
+      "reference_deal_id": "DEAL789",
+      "similarity_reason": "Similar manufacturing facility in same flood zone",
+      "outcome_summary": "Successfully renewed with 10% premium increase"
+    },
+    {
+      "reference_deal_id": "DEAL101",
+      "similarity_reason": "Similar coverage limits and risk profile",
+      "outcome_summary": "Negotiated to $200K premium with $125K deductible"
+    }
+  ]
+} 

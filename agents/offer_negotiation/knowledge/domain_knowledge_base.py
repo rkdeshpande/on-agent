@@ -46,16 +46,45 @@ class DomainKnowledgeBase:
     def search_chunks(self, query: str) -> List[DocumentChunk]:
         """
         Search for chunks containing the query string.
-        Basic case-insensitive keyword matching for now.
+        Matches against both the query and its components, with semantic mapping.
 
         Args:
-            query: The search query string
+            query: The search query string (e.g. "submission.risk_profile")
 
         Returns:
             List of DocumentChunk objects containing the query
         """
+        # Convert query to lowercase for case-insensitive matching
         query = query.lower()
-        return [chunk for chunk in self._chunks.values() if query in chunk.text.lower()]
+
+        # Map information needs to relevant content
+        need_mapping = {
+            "risk_profile": ["risk", "profile", "high-risk", "facility", "flood zone"],
+            "premium_objections": ["premium", "cost", "price", "rate", "deductible"],
+            "deductible_objections": ["deductible", "minimum", "maximum", "adjustment"],
+            "coverage_terms": ["coverage", "limit", "exclusion", "policy", "terms"],
+            "prior_negotiations": ["negotiation", "history", "previous", "prior"],
+        }
+
+        # Get relevant terms for this query
+        relevant_terms = []
+        for need, terms in need_mapping.items():
+            if need in query:
+                relevant_terms.extend(terms)
+
+        # If no specific mapping found, use the query components
+        if not relevant_terms:
+            relevant_terms = query.replace(".", " ").split()
+
+        # Search for matches
+        matches = []
+        for chunk in self._chunks.values():
+            chunk_text = chunk.text.lower()
+            # Match if any relevant term is in the chunk
+            if any(term in chunk_text for term in relevant_terms):
+                matches.append(chunk)
+
+        return matches
 
     def get_all_chunks(self) -> List[DocumentChunk]:
         """Get all chunks in the knowledge base."""

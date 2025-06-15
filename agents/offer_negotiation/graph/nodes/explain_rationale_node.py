@@ -53,7 +53,7 @@ Format your response as a clear, logical explanation that could be presented to 
         # Format domain knowledge
         domain_knowledge = "\n".join(
             [
-                f"- {chunk['content']} (Source: {chunk['metadata']['document_type']})"
+                f"- {chunk['text']} (Source: {chunk['metadata']['document_type']})"
                 for chunk in state["domain_chunks"]
             ]
         )

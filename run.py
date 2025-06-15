@@ -65,50 +65,76 @@ def format_timing(start_time: float, end_time: float) -> str:
 
 
 def display_results(result: dict):
-    """Display the agent's results in a formatted way."""
+    """Display the agent's results in a robust, future-proof way."""
     print("\n" + "═" * 60)
-    print(" " * 20 + "NEGOTIATION STRATEGY" + " " * 20)
+    print(" " * 20 + "NEGOTIATION AGENT OUTPUT" + " " * 20)
     print("═" * 60 + "\n")
 
-    print("📊 Deal Information")
-    print("──────────────────")
-    print(f"Deal ID: {result['deal_id']}\n")
+    # Deal ID
+    deal_id = result.get("deal_id")
+    if deal_id:
+        print(f"📊 Deal ID: {deal_id}\n")
 
-    print("🎯 Strategy")
-    print("──────────")
-    strategy = result.get("reasoning_output", {}).get("strategy", "")
-    if strategy:
-        print(strategy)
-    else:
-        print("No strategy generated")
-    print()
+    # Decision Basis
+    if "decision_basis" in result and result["decision_basis"]:
+        print("🎯 Decision Rules Applied\n──────────────────────")
+        for decision in result["decision_basis"]:
+            print(f"- {decision['heuristic']}")
+            print(f"  Justification: {decision['justification']}")
+            print(f"  Confidence: {decision['confidence']}\n")
 
-    print("📝 Rationale")
-    print("───────────")
-    rationale = result.get("reasoning_output", {}).get("rationale", "")
-    if rationale:
-        print(rationale)
-    else:
-        print("No rationale generated")
-    print()
+    # Strategy
+    if "strategy" in result:
+        print("📋 Strategy\n──────────")
+        print(result["strategy"] or "No strategy generated")
+        print()
 
-    print("📚 Information Used")
-    print("─────────────────")
-    if "reasoning_output" in result:
-        print("\nDeal Fields Used:")
-        for field in result["reasoning_output"].get("used_deal_fields", []):
-            print(f"- {field}")
+    # Rationale
+    if "rationale" in result:
+        print("📝 Rationale\n───────────")
+        print(result["rationale"] or "No rationale generated")
+        print()
 
-        print("\nDomain Knowledge Used:")
-        for chunk in result["reasoning_output"].get("used_domain_chunks", []):
-            print(f"- {chunk['chunk_id']} ({chunk['type']}): {chunk['reason']}")
-    print()
+    # Reasoning Steps
+    if "reasoning_steps" in result:
+        print("🔄 Reasoning Steps\n────────────────")
+        for step in result["reasoning_steps"]:
+            print(f"- {step}")
+        print()
 
-    print("🔄 Reasoning Steps")
-    print("────────────────")
-    for step in result.get("reasoning_steps", []):
-        print(f"- {step}")
-    print()
+    # Information Needs
+    if "information_needs" in result:
+        print("📚 Information Needs\n────────────────────")
+        for need in result["information_needs"]:
+            print(f"- {need}")
+        print()
+
+    # Domain Knowledge Used
+    if "domain_chunks" in result and result["domain_chunks"]:
+        print("📖 Domain Knowledge Used\n───────────────────────")
+        for chunk in result["domain_chunks"]:
+            chunk_id = chunk.get("chunk_id", "Unknown")
+            content = chunk.get("content", "")
+            doc_type = chunk.get("metadata", {}).get("document_type", "Unknown")
+            print(f"- {chunk_id} [{doc_type}]: {content[:100]}...")
+        print()
+
+    # Print any other fields not already shown
+    shown_keys = {
+        "deal_id",
+        "strategy",
+        "rationale",
+        "reasoning_steps",
+        "information_needs",
+        "domain_chunks",
+        "decision_basis",
+    }
+    other_keys = [k for k in result.keys() if k not in shown_keys]
+    if other_keys:
+        print("Other fields:")
+        for k in other_keys:
+            print(f"- {k}: {repr(result[k])}")
+        print()
 
     print("═" * 60)
     print()  # Final newline for spacing

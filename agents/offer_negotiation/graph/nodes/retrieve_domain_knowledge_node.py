@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import UTC, datetime
 from typing import Callable
@@ -19,17 +18,6 @@ from agents.offer_negotiation.utils.trace_metadata import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def pydantic_to_dict(obj):
-    if hasattr(obj, "model_dump"):
-        return obj.model_dump()
-    elif isinstance(obj, list):
-        return [pydantic_to_dict(item) for item in obj]
-    elif isinstance(obj, dict):
-        return {k: pydantic_to_dict(v) for k, v in obj.items()}
-    else:
-        return obj
 
 
 def create_retrieve_domain_knowledge_node(
@@ -56,9 +44,6 @@ def create_retrieve_domain_knowledge_node(
             if not state.information_needs:
                 raise ValueError("Missing required field: information_needs")
 
-            # Log input state
-            logger.info(f"Input state: {json.dumps(state.model_dump(), indent=2)}")
-
             # Retrieve knowledge chunks for each information need
             domain_knowledge = []
             for need in state.information_needs:
@@ -67,7 +52,6 @@ def create_retrieve_domain_knowledge_node(
 
             # Log output state
             logger.info(f"Retrieved {len(domain_knowledge)} domain knowledge chunks")
-            logger.info(f"Output state: {json.dumps(state.model_dump(), indent=2)}")
 
             # Add performance metadata
             end_time = datetime.now(UTC)

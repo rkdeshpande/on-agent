@@ -1,4 +1,3 @@
-import json
 import logging
 from datetime import UTC, datetime
 from typing import Callable, List
@@ -56,9 +55,6 @@ def create_identify_information_needs_node() -> Callable:
             if not state.deal_context:
                 raise ValueError("deal_context is required")
 
-            # Log input state
-            logger.info(f"Input state: {json.dumps(state.model_dump(), indent=2)}")
-
             # Identify information needs based on deal context
             information_needs = []
             deal_context = state.deal_context
@@ -79,7 +75,6 @@ def create_identify_information_needs_node() -> Callable:
 
             # Log output state
             logger.info(f"Identified information needs: {information_needs}")
-            logger.info(f"Output state: {json.dumps(state.model_dump(), indent=2)}")
 
             # Add performance metadata
             end_time = datetime.now(UTC)

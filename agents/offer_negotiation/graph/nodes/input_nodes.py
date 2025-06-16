@@ -13,13 +13,15 @@ def create_deal_context_node(repo: MockDealRepository):
 
     def fetch_deal_context(state: DealContextState) -> DealContextState:
         """Fetch deal context for the given deal_id."""
-        deal_id = state["deal_id"]
+        deal_id = state.deal_id
         deal_context = repo.get_deal_context(deal_id)
 
         if not deal_context:
             raise ValueError(f"No deal context found for deal_id: {deal_id}")
 
-        return {**state, "deal_context": deal_context.model_dump()}
+        return DealContextState(
+            deal_id=state.deal_id, deal_context=deal_context.model_dump()
+        )
 
     return fetch_deal_context
 
@@ -35,7 +37,11 @@ def create_domain_knowledge_node(kb: DomainKnowledgeBase):
         for doc_type in DocumentType:
             chunks.extend(kb.get_chunks_by_type(doc_type))
 
-        return {**state, "domain_chunks": [chunk.model_dump() for chunk in chunks]}
+        return DomainKnowledgeState(
+            deal_id=state.deal_id,
+            deal_context=state.deal_context,
+            domain_knowledge=chunks,
+        )
 
     return fetch_domain_knowledge
 

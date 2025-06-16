@@ -1,55 +1,103 @@
+import json
 import logging
+from datetime import UTC, datetime
 from typing import Callable
 
 from langsmith import traceable
 
+from agents.offer_negotiation.graph.interfaces import RETRIEVE_DOMAIN_KNOWLEDGE_METADATA
 from agents.offer_negotiation.graph.state import (
     DomainKnowledgeState,
     InformationNeedsState,
 )
-from agents.offer_negotiation.knowledge.domain_documents import DocumentChunk
+from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.knowledge.domain_knowledge_base import DomainKnowledgeBase
+from agents.offer_negotiation.utils.trace_metadata import (
+    add_error_metadata,
+    add_performance_metadata,
+    create_trace_metadata,
+)
 
 logger = logging.getLogger(__name__)
 
 
-def create_retrieve_domain_knowledge_node(kb: DomainKnowledgeBase) -> Callable:
+def pydantic_to_dict(obj):
+    if hasattr(obj, "model_dump"):
+        return obj.model_dump()
+    elif isinstance(obj, list):
+        return [pydantic_to_dict(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {k: pydantic_to_dict(v) for k, v in obj.items()}
+    else:
+        return obj
+
+
+def create_retrieve_domain_knowledge_node(
+    knowledge_base: DomainKnowledgeBase,
+) -> Callable:
     """Create a node that retrieves relevant domain knowledge based on information needs."""
 
-    @traceable(name="retrieve_domain_knowledge", run_type="chain")
+    @traceable(
+        name=RETRIEVE_DOMAIN_KNOWLEDGE_METADATA.name,
+        run_type="chain",
+        metadata=RETRIEVE_DOMAIN_KNOWLEDGE_METADATA.model_dump(),
+    )
     def retrieve_domain_knowledge(state: InformationNeedsState) -> DomainKnowledgeState:
-        logger.info("=== Starting retrieve_domain_knowledge node ===")
-        logger.debug(f"Input state: {state}")
+        """Retrieve relevant domain knowledge for the negotiation strategy."""
+        try:
+            logger.info("=== Starting retrieve_domain_knowledge node ===")
+            log_state(state, "Input ")
 
-        # Retrieve domain chunks based on information needs
-        domain_chunks = []
-        used_domain_chunks = []
+            # Create trace metadata
+            start_time = datetime.now(UTC)
+            trace = create_trace_metadata("retrieve_domain_knowledge", state)
 
-        for need in state["information_needs"]:
-            # Example: Retrieve chunks that mention the need
-            chunks = kb.search_chunks(need)
-            for chunk in chunks:
-                domain_chunks.append(chunk.model_dump())
-                used_domain_chunks.append(
-                    {
-                        "chunk_id": chunk.chunk_id,
-                        "type": chunk.metadata["document_type"],
-                        "reason": f"Relevant to {need}",
-                    }
-                )
+            # Validate required fields
+            if not state.information_needs:
+                raise ValueError("Missing required field: information_needs")
 
-        logger.info(f"Retrieved {len(domain_chunks)} domain chunks")
+            # Log input state
+            logger.info(f"Input state: {json.dumps(state.model_dump(), indent=2)}")
 
-        # Update state
-        updated_state: DomainKnowledgeState = {
-            **state,
-            "domain_chunks": domain_chunks,
-            "used_domain_chunks": used_domain_chunks,
-        }
+            # Retrieve knowledge chunks for each information need
+            domain_knowledge = []
+            for need in state.information_needs:
+                chunks = knowledge_base.retrieve(need)
+                domain_knowledge.extend(chunks)
 
-        logger.info("=== Completed retrieve_domain_knowledge node ===")
-        logger.debug(f"Output state: {updated_state}")
+            # Log output state
+            logger.info(f"Retrieved {len(domain_knowledge)} domain knowledge chunks")
+            logger.info(f"Output state: {json.dumps(state.model_dump(), indent=2)}")
 
-        return updated_state
+            # Add performance metadata
+            end_time = datetime.now(UTC)
+            trace = add_performance_metadata(
+                trace,
+                start_time,
+                end_time,
+                {
+                    "knowledge_chunks_count": len(domain_knowledge),
+                    "information_needs_processed": len(state.information_needs),
+                },
+            )
+
+            logger.info("=== Completed retrieve_domain_knowledge node ===")
+            log_state(state, "Output ")
+            return DomainKnowledgeState(
+                **{
+                    k: v
+                    for k, v in state.model_dump().items()
+                    if k != "domain_knowledge"
+                },
+                domain_knowledge=domain_knowledge,
+            )
+        except Exception as e:
+            logger.error(f"Error in retrieve_domain_knowledge: {str(e)}")
+            trace = add_error_metadata(
+                trace,
+                str(e),
+                {"state_keys": list(state.__dict__.keys()) if state else []},
+            )
+            raise
 
     return retrieve_domain_knowledge

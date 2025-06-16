@@ -1,77 +1,53 @@
-from typing import Optional
+"""Mock deal repository for testing."""
 
-from ..models.deal_models import (
-    EXAMPLE_DEAL_CONTEXT,  # We'll use this as our mock data for now
-)
-from ..models.deal_models import (
-    ClientHistory,
-    ComparableDealReference,
-    DealContext,
-    NegotiationContext,
-    SubmissionDetails,
-)
+import json
+from pathlib import Path
+from typing import Any, Dict
+
+from agents.offer_negotiation.core.models.deal_models import DealContext
+from agents.offer_negotiation.tests.test_data.sample_deal import SAMPLE_DEAL
 
 
 class MockDealRepository:
-    """Mock repository for deal data that could be replaced with real DB access later."""
+    """Mock repository for deal data."""
 
     def __init__(self):
-        # In a real implementation, this would be a DB connection
-        self._mock_data = {
-            "DEAL123": EXAMPLE_DEAL_CONTEXT,
-            # Add more mock deals as needed
+        """Initialize the repository with sample data."""
+        # Load DEAL123 from JSON
+        deal123_path = Path("data/deals/DEAL123.json")
+        if deal123_path.exists():
+            with open(deal123_path, "r") as f:
+                deal123 = json.load(f)
+        else:
+            deal123 = None
+        self._deals = {
+            "DEAL001": SAMPLE_DEAL,
         }
+        if deal123:
+            self._deals["DEAL123"] = deal123
 
-    def get_deal_context(self, deal_id: str) -> Optional[DealContext]:
-        """
-        Retrieve a complete DealContext for a given deal_id.
+    def get_deal(self, deal_id: str) -> Dict[str, Any]:
+        """Get a deal by ID.
 
         Args:
-            deal_id: The unique identifier for the deal
+            deal_id: ID of the deal to retrieve
 
         Returns:
-            DealContext if found, None if not found
+            Deal data as a dictionary
+
+        Raises:
+            KeyError: If deal not found
         """
-        return self._mock_data.get(deal_id)
+        if deal_id not in self._deals:
+            raise KeyError(f"Deal {deal_id} not found")
+        return self._deals[deal_id]
 
-    def get_submission_details(self, deal_id: str) -> Optional[SubmissionDetails]:
-        """Get just the submission details for a deal."""
-        context = self.get_deal_context(deal_id)
-        return context.submission if context else None
-
-    def get_client_history(self, client_id: str) -> Optional[ClientHistory]:
-        """Get client history for a given client_id."""
-        # In a real implementation, this would query by client_id
-        # For now, we'll just return the history from our mock deal
-        context = self.get_deal_context("DEAL123")
-        return context.client_history if context else None
-
-    def get_negotiation_context(self, deal_id: str) -> Optional[NegotiationContext]:
-        """Get the current negotiation context for a deal."""
-        context = self.get_deal_context(deal_id)
-        return context.negotiation_context if context else None
-
-    def get_comparable_deals(self, deal_id: str) -> list[ComparableDealReference]:
-        """Get comparable deals for a given deal."""
-        context = self.get_deal_context(deal_id)
-        return context.comparable_deals if context else []
-
-
-# Example usage
-if __name__ == "__main__":
-    repo = MockDealRepository()
-
-    # Test getting full context
-    deal_context = repo.get_deal_context("DEAL123")
-    print("Full deal context:")
-    print(deal_context.model_dump_json(indent=2) if deal_context else "Not found")
-
-    # Test getting individual components
-    submission = repo.get_submission_details("DEAL123")
-    print("\nSubmission details:")
-    print(submission.model_dump_json(indent=2) if submission else "Not found")
-
-    # Test getting non-existent deal
-    missing_deal = repo.get_deal_context("NONEXISTENT")
-    print("\nNon-existent deal:")
-    print("Found" if missing_deal else "Not found")
+    def get_deal_context(self, deal_id: str) -> dict:
+        deal = self.get_deal(deal_id)
+        if isinstance(deal, dict):
+            try:
+                return DealContext(**deal)
+            except Exception:
+                # If the dict is not compatible, just return as is
+                return deal
+        return deal

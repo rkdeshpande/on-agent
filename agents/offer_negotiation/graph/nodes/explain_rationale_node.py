@@ -1,86 +1,95 @@
+import json
 import logging
+from datetime import UTC, datetime
 from typing import Callable
 
 from langchain_core.prompts import ChatPromptTemplate
 from langsmith import traceable
 
+from agents.offer_negotiation.graph.interfaces import EXPLAIN_RATIONALE_METADATA
 from agents.offer_negotiation.graph.state import FinalState, StrategyState
+from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.utils.model import get_llm
+from agents.offer_negotiation.utils.prompt_loader import load_prompt
+from agents.offer_negotiation.utils.trace_metadata import (
+    add_error_metadata,
+    add_performance_metadata,
+    create_trace_metadata,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def generate_rationale(strategy: str, decision_basis: list) -> str:
+    """Generate a rationale string based on the strategy and decision basis."""
+    rationale = (
+        f"Rationale for the proposed strategy:\n\n{strategy}\n\nDecision Basis:\n"
+    )
+    for decision in decision_basis:
+        rationale += f"- {decision.get('heuristic', '')}: {decision.get('justification', '')} (Confidence: {decision.get('confidence', '')})\n"
+    return rationale
 
 
 def create_explain_rationale_node() -> Callable:
     """Create a node that explains the rationale behind the strategy."""
 
-    # Get the LLM
-    llm = get_llm()
-
-    # Create the prompt template
-    rationale_prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                """You are an expert insurance negotiator. Your task is to explain the rationale behind the proposed negotiation strategy.
-
-Deal Context:
-{deal_context}
-
-Strategy:
-{strategy}
-
-Domain Knowledge Used:
-{domain_knowledge}
-
-Explain the rationale for this strategy by:
-1. Connecting each strategic element to specific aspects of the deal context
-2. Explaining how the strategy addresses the client's objections
-3. Justifying the premium and deductible recommendations
-4. Highlighting how the strategy leverages client history and comparable deals
-5. Addressing any risk considerations
-
-Format your response as a clear, logical explanation that could be presented to stakeholders.""",
-            ),
-            ("human", "Please explain the rationale behind this negotiation strategy."),
-        ]
+    @traceable(
+        name=EXPLAIN_RATIONALE_METADATA.name,
+        run_type="chain",
+        metadata=EXPLAIN_RATIONALE_METADATA.model_dump(),
     )
-
-    @traceable(name="explain_rationale", run_type="chain")
     def explain_rationale(state: StrategyState) -> FinalState:
-        logger.info("=== Starting explain_rationale node ===")
-        logger.debug(f"Input state: {state}")
+        """Explain the rationale behind the negotiation strategy."""
+        # Create trace metadata
+        start_time = datetime.now(UTC)
+        trace = create_trace_metadata("explain_rationale", state)
 
-        # Format domain knowledge
-        domain_knowledge = "\n".join(
-            [
-                f"- {chunk['text']} (Source: {chunk['metadata']['document_type']})"
-                for chunk in state["domain_chunks"]
-            ]
-        )
+        try:
+            logger.info("=== Starting explain_rationale node ===")
+            log_state(state, "Input ")
 
-        # Generate rationale using LLM
-        chain = rationale_prompt | llm
-        response = chain.invoke(
-            {
-                "deal_context": state["deal_context"],
-                "strategy": state["strategy"],
-                "domain_knowledge": domain_knowledge
-                or "No specific domain knowledge available.",
-            }
-        )
+            # Validate required fields
+            if not state.strategy:
+                raise ValueError("strategy is required")
+            if not state.decision_basis:
+                raise ValueError("decision_basis is required")
 
-        rationale = response.content
-        logger.info(f"Generated rationale: {rationale}")
+            # Generate rationale based on strategy and decision_basis
+            rationale = generate_rationale(state.strategy, state.decision_basis)
 
-        # Update state
-        updated_state: FinalState = {
-            **state,
-            "rationale": rationale,
-        }
+            # Log output state
+            logger.info(f"Generated rationale: {rationale}")
+            log_state(state, "Output ")
 
-        logger.info("=== Completed explain_rationale node ===")
-        logger.debug(f"Output state: {updated_state}")
+            # Add performance metadata
+            end_time = datetime.now(UTC)
+            trace = add_performance_metadata(
+                trace,
+                start_time,
+                end_time,
+                {
+                    "rationale_length": len(rationale),
+                    "decision_basis_count": len(state.decision_basis),
+                },
+            )
 
-        return updated_state
+            logger.info("=== Completed explain_rationale node ===")
+            return FinalState(
+                **{
+                    k: v
+                    for k, v in state.model_dump().items()
+                    if k not in ["rationale", "reasoning_steps"]
+                },
+                rationale=rationale,
+                reasoning_steps=[rationale],
+            )
+        except Exception as e:
+            logger.error(f"Error in explain_rationale: {str(e)}")
+            trace = add_error_metadata(
+                trace,
+                str(e),
+                {"state_keys": list(state.__dict__.keys()) if state else []},
+            )
+            raise
 
     return explain_rationale

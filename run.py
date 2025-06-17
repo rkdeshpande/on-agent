@@ -83,18 +83,6 @@ def display_results(result: dict):
             print(f"  Justification: {decision['justification']}")
             print(f"  Confidence: {decision['confidence']}\n")
 
-    # Strategy
-    if "strategy" in result:
-        print("📋 Strategy\n──────────")
-        print(result["strategy"] or "No strategy generated")
-        print()
-
-    # Rationale
-    if "rationale" in result:
-        print("📝 Rationale\n───────────")
-        print(result["rationale"] or "No rationale generated")
-        print()
-
     # Reasoning Steps
     if "reasoning_steps" in result:
         print("🔄 Reasoning Steps\n────────────────")
@@ -117,23 +105,6 @@ def display_results(result: dict):
             content = chunk.get("content", "")
             doc_type = chunk.get("metadata", {}).get("document_type", "Unknown")
             print(f"- {chunk_id} [{doc_type}]: {content[:100]}...")
-        print()
-
-    # Print any other fields not already shown
-    shown_keys = {
-        "deal_id",
-        "strategy",
-        "rationale",
-        "reasoning_steps",
-        "information_needs",
-        "domain_chunks",
-        "decision_basis",
-    }
-    other_keys = [k for k in result.keys() if k not in shown_keys]
-    if other_keys:
-        print("Other fields:")
-        for k in other_keys:
-            print(f"- {k}: {repr(result[k])}")
         print()
 
     print("═" * 60)

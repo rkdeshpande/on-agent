@@ -8,14 +8,11 @@ This project implements an agent for handling offer and negotiation processes us
 - **Reason**: Generates a negotiation strategy based on the past rationale.
 - **Log Rationale**: Logs the reasoning process for future reference.
 
-## Installation
+## Quick Start
 
-1. **Clone the Repository**
-
-   ```bash
-   git clone <repository-url>
-   cd <repository-directory>
-   ```
+1. **Prerequisites**
+   - Python 3.8 or higher
+   - pip (Python package installer)
 
 2. **Create a Virtual Environment**
 
@@ -30,27 +27,10 @@ This project implements an agent for handling offer and negotiation processes us
    pip install -r requirements.txt
    ```
 
-4. **Set Up Pre-commit Hooks**
+4. **Run the Agent**
 
    ```bash
-   pre-commit install
+   python run.py
    ```
 
-## Usage
-
-To run the agent, use the `run.py` script:
-
-```bash
-python run.py
-```
-
-This will execute the agent with a predefined deal ID and print the output.
-
-## Development
-
-- **Code Quality**: The project uses `black`, `flake8`, and `isort` for code formatting and linting. Run `pre-commit run --all-files` to check code quality.
-- **Testing**: Use `pytest` to run tests.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+   This will execute the agent with a predefined deal ID and print the output.

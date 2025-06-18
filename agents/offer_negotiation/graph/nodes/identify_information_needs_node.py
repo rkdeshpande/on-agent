@@ -8,11 +8,7 @@ from agents.offer_negotiation.core.models.deal_models import DealContext
 from agents.offer_negotiation.graph.interfaces import (
     IDENTIFY_INFORMATION_NEEDS_METADATA,
 )
-from agents.offer_negotiation.graph.state import (
-    AgentState,
-    DealContextState,
-    InformationNeedsState,
-)
+from agents.offer_negotiation.graph.state import AgentState
 from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.utils.trace_metadata import (
     add_error_metadata,

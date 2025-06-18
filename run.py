@@ -1,9 +1,6 @@
 import logging
 import os
-import time
-from datetime import datetime
 from pathlib import Path
-from pprint import pformat
 from typing import Dict
 
 import yaml
@@ -55,59 +52,6 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-def format_timing(start_time: float, end_time: float) -> str:
-    """Format timing information in a readable way."""
-    duration = end_time - start_time
-    return f"{duration:.2f}s"
-
-
-def display_results(result: dict):
-    """Display the agent's results in a robust, future-proof way."""
-    print("\n" + "═" * 60)
-    print(" " * 20 + "NEGOTIATION AGENT OUTPUT" + " " * 20)
-    print("═" * 60 + "\n")
-
-    # Deal ID
-    deal_id = result.get("deal_id")
-    if deal_id:
-        print(f"📊 Deal ID: {deal_id}\n")
-
-    # Decision Basis
-    if "decision_basis" in result and result["decision_basis"]:
-        print("🎯 Decision Rules Applied\n──────────────────────")
-        for decision in result["decision_basis"]:
-            print(f"- {decision['heuristic']}")
-            print(f"  Justification: {decision['justification']}")
-            print(f"  Confidence: {decision['confidence']}\n")
-
-    # Reasoning Steps
-    if "reasoning_steps" in result:
-        print("🔄 Reasoning Steps\n────────────────")
-        for step in result["reasoning_steps"]:
-            print(f"- {step}")
-        print()
-
-    # Information Needs
-    if "information_needs" in result:
-        print("📚 Information Needs\n────────────────────")
-        for need in result["information_needs"]:
-            print(f"- {need}")
-        print()
-
-    # Domain Knowledge Used
-    if "domain_chunks" in result and result["domain_chunks"]:
-        print("📖 Domain Knowledge Used\n───────────────────────")
-        for chunk in result["domain_chunks"]:
-            chunk_id = chunk.get("chunk_id", "Unknown")
-            content = chunk.get("content", "")
-            doc_type = chunk.get("metadata", {}).get("document_type", "Unknown")
-            print(f"- {chunk_id} [{doc_type}]: {content[:100]}...")
-        print()
-
-    print("═" * 60)
-    print()  # Final newline for spacing
-
-
 def main():
     try:
         # Validate configuration
@@ -123,12 +67,11 @@ def main():
         # Run the agent
         result = run_agent(deal_id="DEAL123", model_settings=model_settings)
 
-        # Debug logging to see what we got back
-        logger.debug("Raw result from agent:")
-        logger.debug(pformat(result))
-
-        # Display results in ASCII format
-        display_results(result)
+        # Log successful completion
+        logger.info("Agent execution completed successfully")
+        logger.info(f"Deal ID: {result.get('deal_id', 'Unknown')}")
+        logger.info(f"Strategy: {result.get('strategy', 'NOT FOUND')}")
+        logger.info(f"Rationale: {result.get('rationale', 'NOT FOUND')}")
 
     except Exception as e:
         logger.error(f"Error running agent: {str(e)}")

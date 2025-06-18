@@ -7,7 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langsmith import traceable
 
 from agents.offer_negotiation.graph.interfaces import EXPLAIN_RATIONALE_METADATA
-from agents.offer_negotiation.graph.state import FinalState, StrategyState
+from agents.offer_negotiation.graph.state import AgentState
 from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.utils.model import get_llm
 from agents.offer_negotiation.utils.prompt_loader import load_prompt
@@ -38,7 +38,7 @@ def create_explain_rationale_node() -> Callable:
         run_type="chain",
         metadata=EXPLAIN_RATIONALE_METADATA.model_dump(),
     )
-    def explain_rationale(state: StrategyState) -> FinalState:
+    def explain_rationale(state: AgentState) -> AgentState:
         """Explain the rationale behind the negotiation strategy."""
         # Create trace metadata
         start_time = datetime.now(UTC)
@@ -74,15 +74,9 @@ def create_explain_rationale_node() -> Callable:
             )
 
             logger.info("=== Completed explain_rationale node ===")
-            return FinalState(
-                **{
-                    k: v
-                    for k, v in state.model_dump().items()
-                    if k not in ["rationale", "reasoning_steps"]
-                },
-                rationale=rationale,
-                reasoning_steps=[rationale],
-            )
+            state.rationale = rationale
+            state.reasoning_steps = [rationale]
+            return state
         except Exception as e:
             logger.error(f"Error in explain_rationale: {str(e)}")
             trace = add_error_metadata(

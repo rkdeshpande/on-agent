@@ -5,7 +5,7 @@ from agents.offer_negotiation.core.repositories.mock_deal_repository import (
     MockDealRepository,
 )
 from agents.offer_negotiation.graph.graph import create_agent_graph
-from agents.offer_negotiation.graph.state import DealContextState, FinalState
+from agents.offer_negotiation.graph.state import AgentState
 from agents.offer_negotiation.knowledge.domain_documents import (
     DocumentProcessor,
     load_domain_documents,
@@ -43,7 +43,7 @@ def run_agent(
     agent_graph = create_agent_graph(deal_repo, knowledge_base).compile()
 
     # Prepare initial state for the graph
-    initial_state = DealContextState(
+    initial_state = AgentState(
         deal_id=deal_id,
         deal_context={},
         domain_knowledge=[],
@@ -54,5 +54,5 @@ def run_agent(
     # Run the graph
     result = agent_graph.invoke(initial_state)
 
-    final_state = FinalState(**result)
-    return final_state.model_dump()
+    final_state = AgentState(**result)
+    return final_state.to_dict()

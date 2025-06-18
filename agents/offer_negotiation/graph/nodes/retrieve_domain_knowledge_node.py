@@ -5,10 +5,7 @@ from typing import Callable
 from langsmith import traceable
 
 from agents.offer_negotiation.graph.interfaces import RETRIEVE_DOMAIN_KNOWLEDGE_METADATA
-from agents.offer_negotiation.graph.state import (
-    DomainKnowledgeState,
-    InformationNeedsState,
-)
+from agents.offer_negotiation.graph.state import AgentState
 from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.knowledge.domain_knowledge_base import DomainKnowledgeBase
 from agents.offer_negotiation.utils.trace_metadata import (
@@ -30,7 +27,7 @@ def create_retrieve_domain_knowledge_node(
         run_type="chain",
         metadata=RETRIEVE_DOMAIN_KNOWLEDGE_METADATA.model_dump(),
     )
-    def retrieve_domain_knowledge(state: InformationNeedsState) -> DomainKnowledgeState:
+    def retrieve_domain_knowledge(state: AgentState) -> AgentState:
         """Retrieve relevant domain knowledge for the negotiation strategy."""
         try:
             logger.info("=== Starting retrieve_domain_knowledge node ===")
@@ -67,14 +64,8 @@ def create_retrieve_domain_knowledge_node(
 
             logger.info("=== Completed retrieve_domain_knowledge node ===")
             log_state(state, "Output ")
-            return DomainKnowledgeState(
-                **{
-                    k: v
-                    for k, v in state.model_dump().items()
-                    if k != "domain_knowledge"
-                },
-                domain_knowledge=domain_knowledge,
-            )
+            state.domain_knowledge = domain_knowledge
+            return state
         except Exception as e:
             logger.error(f"Error in retrieve_domain_knowledge: {str(e)}")
             trace = add_error_metadata(

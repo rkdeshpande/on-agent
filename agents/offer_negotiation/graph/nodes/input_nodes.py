@@ -5,13 +5,13 @@ from langgraph.graph import END, StateGraph
 from ...core.repositories.mock_deal_repository import MockDealRepository
 from ...knowledge.domain_documents import DocumentChunk, DocumentType
 from ...knowledge.domain_knowledge_base import DomainKnowledgeBase
-from ..state import DealContextState, DomainKnowledgeState
+from ..state import AgentState
 
 
 def create_deal_context_node(repo: MockDealRepository):
     """Create a node that fetches deal context from the repository."""
 
-    def fetch_deal_context(state: DealContextState) -> DealContextState:
+    def fetch_deal_context(state: AgentState) -> AgentState:
         """Fetch deal context for the given deal_id."""
         deal_id = state.deal_id
         deal_context = repo.get_deal_context(deal_id)
@@ -19,9 +19,8 @@ def create_deal_context_node(repo: MockDealRepository):
         if not deal_context:
             raise ValueError(f"No deal context found for deal_id: {deal_id}")
 
-        return DealContextState(
-            deal_id=state.deal_id, deal_context=deal_context.model_dump()
-        )
+        state.deal_context = deal_context.model_dump()
+        return state
 
     return fetch_deal_context
 
@@ -29,7 +28,7 @@ def create_deal_context_node(repo: MockDealRepository):
 def create_domain_knowledge_node(kb: DomainKnowledgeBase):
     """Create a node that retrieves relevant domain knowledge chunks."""
 
-    def fetch_domain_knowledge(state: DomainKnowledgeState) -> DomainKnowledgeState:
+    def fetch_domain_knowledge(state: AgentState) -> AgentState:
         """Fetch relevant domain knowledge based on deal context."""
         # For now, we'll fetch all chunks of each type
         # In a real implementation, this would be more selective
@@ -37,11 +36,8 @@ def create_domain_knowledge_node(kb: DomainKnowledgeBase):
         for doc_type in DocumentType:
             chunks.extend(kb.get_chunks_by_type(doc_type))
 
-        return DomainKnowledgeState(
-            deal_id=state.deal_id,
-            deal_context=state.deal_context,
-            domain_knowledge=chunks,
-        )
+        state.domain_knowledge = chunks
+        return state
 
     return fetch_domain_knowledge
 
@@ -52,7 +48,7 @@ def create_input_graph(
     """Create the input portion of our agent graph."""
 
     # Create the graph
-    workflow = StateGraph(DomainKnowledgeState)
+    workflow = StateGraph(AgentState)
 
     # Add nodes
     workflow.add_node("fetch_deal_context", create_deal_context_node(deal_repo))

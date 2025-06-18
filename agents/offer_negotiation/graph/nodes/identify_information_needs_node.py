@@ -8,7 +8,11 @@ from agents.offer_negotiation.core.models.deal_models import DealContext
 from agents.offer_negotiation.graph.interfaces import (
     IDENTIFY_INFORMATION_NEEDS_METADATA,
 )
-from agents.offer_negotiation.graph.state import DealContextState, InformationNeedsState
+from agents.offer_negotiation.graph.state import (
+    AgentState,
+    DealContextState,
+    InformationNeedsState,
+)
 from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.utils.trace_metadata import (
     add_error_metadata,
@@ -41,7 +45,7 @@ def create_identify_information_needs_node() -> Callable:
         run_type="chain",
         metadata=IDENTIFY_INFORMATION_NEEDS_METADATA.model_dump(),
     )
-    def identify_information_needs(state: DealContextState) -> InformationNeedsState:
+    def identify_information_needs(state: AgentState) -> AgentState:
         """Identify information needs for the negotiation strategy."""
         # Create trace metadata
         start_time = datetime.now(UTC)
@@ -90,14 +94,8 @@ def create_identify_information_needs_node() -> Callable:
 
             logger.info("=== Completed identify_information_needs node ===")
             log_state(state, "Output ")
-            return InformationNeedsState(
-                **{
-                    k: v
-                    for k, v in state.model_dump().items()
-                    if k != "information_needs"
-                },
-                information_needs=information_needs,
-            )
+            state.information_needs = information_needs
+            return state
         except Exception as e:
             logger.error(f"Error in identify_information_needs: {str(e)}")
             trace = add_error_metadata(

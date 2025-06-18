@@ -8,7 +8,7 @@ from langsmith import traceable
 
 from agents.offer_negotiation.core.models.deal_models import DealContext
 from agents.offer_negotiation.graph.interfaces import GENERATE_STRATEGY_METADATA
-from agents.offer_negotiation.graph.state import DomainKnowledgeState, StrategyState
+from agents.offer_negotiation.graph.state import AgentState
 from agents.offer_negotiation.graph.utils import log_state
 from agents.offer_negotiation.knowledge.domain_documents import DocumentChunk
 from agents.offer_negotiation.utils.model import get_llm
@@ -120,7 +120,7 @@ def create_generate_strategy_node() -> Callable:
         run_type="chain",
         metadata=GENERATE_STRATEGY_METADATA.model_dump(),
     )
-    def generate_strategy(state: DomainKnowledgeState) -> StrategyState:
+    def generate_strategy(state: AgentState) -> AgentState:
         """Generate a negotiation strategy based on domain knowledge."""
         # Create trace metadata
         trace = create_trace_metadata(GENERATE_STRATEGY_METADATA.name, state)
@@ -188,15 +188,9 @@ def create_generate_strategy_node() -> Callable:
 
             # Update state with strategy and decision basis
             logger.info("=== Completed generate_strategy node ===")
-            return StrategyState(
-                **{
-                    k: v
-                    for k, v in state.model_dump().items()
-                    if k not in ["strategy", "decision_basis"]
-                },
-                strategy=negotiation_strategy,
-                decision_basis=decisions,
-            )
+            state.strategy = negotiation_strategy
+            state.decision_basis = decisions
+            return state
 
         except Exception as e:
             # Add error metadata

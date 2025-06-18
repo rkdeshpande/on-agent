@@ -8,7 +8,7 @@ from config.app_config import config
 # Load environment variables from secrets file (if it exists)
 load_dotenv(config.secrets_env_path, override=True)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
 
 # Load model settings
 with open(config.model_settings_path, "r") as f:

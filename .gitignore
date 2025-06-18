@@ -6,7 +6,11 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
+
+# Ignore other dist/ folders
+**/dist/
+!frontend/dist/
+
 downloads/
 eggs/
 .eggs/
@@ -77,3 +81,5 @@ __pypackages__/
 
 # Scratch directory for testing
 scratch/ 
+
+node_modules/

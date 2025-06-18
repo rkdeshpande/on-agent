@@ -1,14 +1,14 @@
 # Model configuration settings
 
-provider: "ollama"
-model: "mistral"
+provider: "openai"
+model: "gpt-3.5-turbo"
 
 # Model settings - uncomment the ones you want to use
 model_kwargs:
   temperature: 0.7
   max_tokens: 1000
-  # Ollama specific options
-  num_predict: 1000
-  # OpenAI specific options (commented out)
-  # presence_penalty: 0.0
-  # frequency_penalty: 0.0
+  # OpenAI specific options
+  presence_penalty: 0.0
+  frequency_penalty: 0.0
+  # Ollama specific options (commented out)
+  # num_predict: 1000

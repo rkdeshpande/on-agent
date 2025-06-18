@@ -5,6 +5,8 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from config.app_config import config
+
 
 class DocumentType(str, Enum):
     """Types of domain knowledge documents."""
@@ -72,19 +74,20 @@ class DocumentProcessor:
 
 
 def load_domain_documents(
-    base_path: str = "data/domain_knowledge",
+    base_path: Optional[str] = None,
 ) -> List[DomainDocument]:
     """
     Load domain documents from the specified directory.
 
     Args:
-        base_path: Path to the directory containing domain knowledge documents
+        base_path: Path to the directory containing domain knowledge documents.
+                   If None, uses the configured domain knowledge directory.
 
     Returns:
         List of loaded DomainDocument objects
     """
     documents = []
-    base_dir = Path(base_path)
+    base_dir = Path(base_path) if base_path else config.domain_knowledge_dir
 
     # Map file names to document types
     type_mapping = {

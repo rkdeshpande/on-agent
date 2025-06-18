@@ -12,6 +12,7 @@ from agents.offer_negotiation.knowledge.domain_documents import (
 )
 from agents.offer_negotiation.knowledge.domain_knowledge_base import DomainKnowledgeBase
 from agents.offer_negotiation.utils.logging import setup_logging
+from config.app_config import config
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -23,10 +24,8 @@ def run_agent(
     model_settings: dict = None,
 ) -> dict:
     """Run the graph-based negotiation agent and return the final state."""
-    # Set the project name for LangSmith
-    os.environ["LANGCHAIN_PROJECT"] = os.getenv(
-        "LANGCHAIN_PROJECT", "OfferNegotiationAgent"
-    )
+    # Set the project name for LangSmith using config
+    os.environ["LANGCHAIN_PROJECT"] = config.langchain_project
 
     # Set up repositories and knowledge base
     deal_repo = MockDealRepository()
@@ -54,5 +53,6 @@ def run_agent(
 
     # Run the graph
     result = agent_graph.invoke(initial_state)
+
     final_state = FinalState(**result)
     return final_state.model_dump()

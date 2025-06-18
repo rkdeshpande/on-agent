@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 from agents.offer_negotiation.core.models.deal_models import DealContext
 from agents.offer_negotiation.tests.test_data.sample_deal import SAMPLE_DEAL
+from config.app_config import config
 
 
 class MockDealRepository:
@@ -13,8 +14,8 @@ class MockDealRepository:
 
     def __init__(self):
         """Initialize the repository with sample data."""
-        # Load DEAL123 from JSON
-        deal123_path = Path("data/deals/DEAL123.json")
+        # Load DEAL123 from JSON using config path
+        deal123_path = config.deals_dir / "DEAL123.json"
         if deal123_path.exists():
             with open(deal123_path, "r") as f:
                 deal123 = json.load(f)

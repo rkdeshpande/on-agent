@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from config.app_config import config
+
 
 def load_prompt(filename: str) -> str:
     """Load a prompt template from the config/prompts directory.
@@ -11,9 +13,7 @@ def load_prompt(filename: str) -> str:
     Returns:
         str: Contents of the prompt file
     """
-    # Get the project root directory (where config/ is located)
-    project_root = Path(__file__).parent.parent.parent.parent
-    prompt_path = project_root / "config" / "prompts" / filename
+    prompt_path = config.prompts_dir / filename
 
     with open(prompt_path, "r") as f:
         return f.read()

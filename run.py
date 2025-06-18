@@ -10,21 +10,18 @@ import yaml
 from dotenv import load_dotenv
 
 from agents.offer_negotiation.agent import run_agent
+from config.app_config import config
 
 # Load environment variables from secrets file (if it exists)
-load_dotenv(Path("config/secrets.env"), override=True)
+load_dotenv(config.secrets_env_path, override=True)
 
 # Load model settings
-with open("config/model_settings.yaml", "r") as f:
+with open(config.model_settings_path, "r") as f:
     model_settings = yaml.safe_load(f)
 
 
 # Configure logging
 def setup_logging():
-    # Create logs directory if it doesn't exist
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
-
     # Configure root logger
     logging.basicConfig(
         level=logging.INFO,
@@ -34,7 +31,7 @@ def setup_logging():
             logging.StreamHandler(),
             # File handler
             logging.FileHandler(
-                filename=log_dir / "agent.log",
+                filename=config.log_file_path,
                 mode="a",  # append mode
                 encoding="utf-8",
             ),
@@ -113,6 +110,13 @@ def display_results(result: dict):
 
 def main():
     try:
+        # Validate configuration
+        if not config.validate():
+            logger.error(
+                "Configuration validation failed. Please check the errors above."
+            )
+            return
+
         # Example usage
         logger.info("Starting agent with deal DEAL123...")
 

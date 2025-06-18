@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, abort
+from flask import Flask, request, jsonify, render_template, abort, send_from_directory
 import yaml
 import json
 from dotenv import load_dotenv
@@ -32,10 +32,14 @@ def make_json_serializable(obj):
         except (TypeError, ValueError):
             return str(obj)
 
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.static_folder, 'index.html')
 
-@app.route("/")
-def index():
-    return render_template("index.html")
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory(app.static_folder, path)
 
 
 @app.route("/run", methods=["POST"])

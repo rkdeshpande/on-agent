@@ -27,7 +27,15 @@ This project implements an agent for handling offer and negotiation processes us
    pip install -r requirements.txt
    ```
 
-4. **Run the Agent**
+4. **Set Up Environment Variables**
+
+   Copy the template and add your API keys:
+   ```bash
+   cp config/secrets.env.template config/secrets.env
+   # Edit config/secrets.env with your actual API keys
+   ```
+
+5. **Run the Agent**
 
    ```bash
    python run.py

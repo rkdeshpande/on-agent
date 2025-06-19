@@ -6,16 +6,18 @@ interface Props {
 
 const InformationGaps: React.FC<Props> = ({ gaps }) => {
   return (
-    <section>
-      <h2>🚨 Information Gaps</h2>
+    <div className="space-y-4 text-sm text-gray-800">
       {gaps.map((gap, i) => (
-        <div key={i} style={{ backgroundColor: '#fff3cd', padding: '1rem', marginBottom: '1rem' }}>
-          <strong>{gap.gap_description}</strong>
+        <div
+          key={i}
+          className="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded shadow-sm"
+        >
+          <p className="font-semibold mb-1">❗ {gap.gap_description}</p>
           <p><strong>Recommended Action:</strong> {gap.recommended_action}</p>
           <p><strong>Impact:</strong> {gap.impact_on_strategy}</p>
         </div>
       ))}
-    </section>
+    </div>
   );
 };
 

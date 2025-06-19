@@ -20,7 +20,6 @@ function App() {
       });
 
       const json = await res.json();
-      // Extract the actual result data from the Flask response wrapper
       const result = json.result || json;
       setData(result);
     } catch (err) {
@@ -31,92 +30,47 @@ function App() {
   };
 
   return (
-    <main style={{
-      fontFamily: 'sans-serif',
-      padding: '2rem',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      backgroundColor: '#f8f9fb',
-      minHeight: '100vh'
-    }}>
-      <div style={{
-        maxWidth: '700px',
-        width: '100%',
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-        textAlign: 'center',
-        marginBottom: '2rem'
-      }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', color: '#1a2e42' }}>
-          Agentic Deal Assistant
-        </h1>
-        <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#5c6b7c' }}>
-          Analyze, recommend, and negotiate smarter with AI-driven insights.
-        </p>
+    <main className="min-h-screen w-full bg-gray-50 font-sans text-gray-800">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        <div className="bg-white p-8 rounded shadow-md text-center mb-10">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Agentic Offer & Negotiation Cockpit</h1>
+          <p className="text-gray-500 mb-6">
+            Analyze, recommend, and negotiate smarter with AI-driven insights.
+          </p>
 
-        <form onSubmit={runAgent} style={{
-          display: 'flex',
-          gap: '0.5rem',
-          justifyContent: 'center',
-          flexWrap: 'wrap'
-        }}>
-          <input
-            value={dealId}
-            onChange={(e) => setDealId(e.target.value)}
-            placeholder="Enter Deal ID (e.g., DEAL123)"
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              width: '60%',
-              minWidth: '250px'
-            }}
-          />
-          <button type="submit" disabled={loading} style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: loading ? '#ccc' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}>
-            {loading ? 'Running...' : 'Run'}
-          </button>
-        </form>
+          <form onSubmit={runAgent} className="flex flex-wrap justify-center gap-4 mb-4">
+            <input
+              value={dealId}
+              onChange={(e) => setDealId(e.target.value)}
+              placeholder="Enter Deal ID (e.g., DEAL123)"
+              className="border border-gray-300 px-4 py-2 rounded w-64"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-4 py-2 rounded text-white ${loading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {loading ? 'Running...' : 'Run'}
+            </button>
+          </form>
 
-        {loading && (
-          <div style={{ marginTop: '1rem', width: '100%', height: '6px', backgroundColor: '#eee' }}>
-            <div style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: '#007bff',
-              animation: 'progress 1.5s infinite'
-            }} />
-            <style>
-              {`
-                @keyframes progress {
-                  0% { transform: translateX(-100%); }
-                  50% { transform: translateX(0); }
-                  100% { transform: translateX(100%); }
-                }
-                div[style*="animation: progress"] {
-                  transition: transform 0.2s;
-                }
-              `}
-            </style>
+          {loading && (
+            <div className="w-full bg-gray-200 h-2 rounded overflow-hidden">
+              <div className="bg-blue-600 h-full animate-pulse w-full" />
+            </div>
+          )}
+        </div>
+
+        {data?.strategy && (
+          <div className="space-y-10">
+            <StrategyTabs strategy={data.strategy} />
+            <TabbedPanel data={data} />
           </div>
         )}
       </div>
-
-      {data && (
-        <div style={{ width: '100%', maxWidth: '900px' }}>
-          <StrategyTabs strategy={data.strategy} />
-          <TabbedPanel data={data} />
-        </div>
-      )}
     </main>
   );
 }

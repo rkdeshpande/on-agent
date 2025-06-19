@@ -2,47 +2,53 @@ import React, { useState } from 'react';
 import ContextSummary from './ContextSummary';
 import DomainKnowledge from './DomainKnowledge';
 import InformationGaps from './InformationGaps';
-import DebugPanel from './DebugPanel';
 
 interface Props {
   data: any;
 }
 
 const TabbedPanel: React.FC<Props> = ({ data }) => {
-  const tabs = ['Context', 'Knowledge', 'Gaps', 'Debug'] as const;
-  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Context');
+  const tabs = ['Deal Context', 'Domain Knowledge', 'Information Gaps'] as const;
+  const [activeTab, setActiveTab] = useState<typeof tabs[number]>('Deal Context');
+
+  const tabStyles = (tab: string) =>
+    `px-6 py-3 text-base font-medium border-b-2 transition ${
+      activeTab === tab
+        ? 'border-blue-600 text-blue-600'
+        : 'border-transparent text-gray-500 hover:text-blue-500 hover:border-blue-300'
+    }`;
+
+  // Debug logging
+  console.log('TabbedPanel data:', data);
+  console.log('Context summary:', data?.context_summary);
+  console.log('Domain knowledge:', data?.relevant_domain_knowledge);
+  console.log('Information gaps:', data?.information_gaps);
 
   return (
-    <div style={{ marginTop: '2rem' }}>
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        borderBottom: '2px solid #ccc',
-        marginBottom: '1rem'
-      }}>
+    <section className="mt-8">
+      <div className="flex gap-6 border-b border-gray-200 mb-4">
         {tabs.map((tab) => (
-          <div
+          <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              borderBottom: activeTab === tab ? '3px solid #007bff' : '3px solid transparent',
-              fontWeight: activeTab === tab ? 'bold' : 'normal',
-            }}
+            className={tabStyles(tab)}
           >
             {tab}
-          </div>
+          </button>
         ))}
       </div>
 
-      <div style={{ padding: '1rem', border: '1px solid #ddd' }}>
-        {activeTab === 'Context' && <ContextSummary context={data.context_summary} />}
-        {activeTab === 'Knowledge' && <DomainKnowledge items={data.relevant_domain_knowledge} />}
-        {activeTab === 'Gaps' && <InformationGaps gaps={data.information_gaps} />}
-        {activeTab === 'Debug' && <DebugPanel data={data} />}
+      <div className="bg-white border border-gray-200 rounded-md p-6 shadow-sm text-sm">
+        {activeTab === 'Deal Context' && data?.context_summary && <ContextSummary context={data.context_summary} />}
+        {activeTab === 'Deal Context' && !data?.context_summary && <div className="text-gray-500">No context summary available</div>}
+        
+        {activeTab === 'Domain Knowledge' && data?.relevant_domain_knowledge && <DomainKnowledge items={data.relevant_domain_knowledge} />}
+        {activeTab === 'Domain Knowledge' && !data?.relevant_domain_knowledge && <div className="text-gray-500">No domain knowledge available</div>}
+        
+        {activeTab === 'Information Gaps' && data?.information_gaps && <InformationGaps gaps={data.information_gaps} />}
+        {activeTab === 'Information Gaps' && !data?.information_gaps && <div className="text-gray-500">No information gaps available</div>}
       </div>
-    </div>
+    </section>
   );
 };
 

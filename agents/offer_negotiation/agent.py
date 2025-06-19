@@ -55,4 +55,13 @@ def run_agent(
     result = agent_graph.invoke(initial_state)
 
     final_state = AgentState(**result)
-    return final_state.to_dict()
+    logger.info(f"Final state strategy: {final_state.strategy}")
+    logger.info(f"Final state strategy type: {type(final_state.strategy)}")
+    if final_state.strategy:
+        logger.info(
+            f"Final state strategy content: {final_state.strategy.model_dump()}"
+        )
+
+    result_dict = final_state.to_dict()
+    logger.info(f"Result dict strategy: {result_dict.get('strategy')}")
+    return result_dict

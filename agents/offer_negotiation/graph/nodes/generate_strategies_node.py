@@ -245,6 +245,11 @@ def create_generate_strategies_node() -> Callable:
 
             # STEP 7: Update state with the generated strategies
             state.strategy = strategy
+            logger.info(f"Strategy set in state: {state.strategy}")
+            logger.info(f"Strategy type: {type(state.strategy)}")
+            logger.info(
+                f"Strategy content: {strategy.model_dump() if strategy else 'None'}"
+            )
             return state
 
         except Exception as e:

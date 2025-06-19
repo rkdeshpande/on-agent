@@ -12,6 +12,9 @@ from agents.offer_negotiation.graph.nodes.fetch_deal_context_node import (
 from agents.offer_negotiation.graph.nodes.fetch_domain_knowledge_node import (
     create_fetch_domain_knowledge_node,
 )
+from agents.offer_negotiation.graph.nodes.generate_strategies_node import (
+    create_generate_strategies_node,
+)
 from agents.offer_negotiation.graph.nodes.identify_information_gaps_node import (
     create_identify_information_gaps_node,
 )
@@ -24,9 +27,6 @@ from agents.offer_negotiation.knowledge.domain_knowledge_base import DomainKnowl
 
 # from agents.offer_negotiation.graph.nodes.generate_rationale_node import (
 #     create_generate_rationale_node,
-# )
-# from agents.offer_negotiation.graph.nodes.generate_strategies_node import (
-#     create_generate_strategies_node,
 # )
 
 
@@ -81,8 +81,11 @@ def create_agent_graph(
         "identify_information_gaps", create_identify_information_gaps_node()
     )
 
+    # Strategy generation node - creates three distinct strategies
+    print("Adding generate_strategies node...")
+    workflow.add_node("generate_strategies", create_generate_strategies_node())
+
     # Future nodes (commented out for now)
-    # workflow.add_node("generate_strategies", create_generate_strategies_node())
     # workflow.add_node("generate_rationale", create_generate_rationale_node())
 
     # Define the flow
@@ -92,12 +95,12 @@ def create_agent_graph(
     workflow.add_edge("fetch_domain_knowledge", "analyze_context")
     workflow.add_edge("analyze_context", "select_relevant_knowledge")
     workflow.add_edge("select_relevant_knowledge", "identify_information_gaps")
-    workflow.add_edge("identify_information_gaps", END)
+    workflow.add_edge("identify_information_gaps", "generate_strategies")
+    workflow.add_edge("generate_strategies", END)
 
     print("=== GRAPH CREATION COMPLETE ===")
 
     # Future edges (commented out for now)
-    # workflow.add_edge("identify_information_gaps", "generate_strategies")
     # workflow.add_edge("generate_strategies", "generate_rationale")
     # workflow.add_edge("generate_rationale", END)
 

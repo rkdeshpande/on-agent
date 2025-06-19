@@ -8,6 +8,7 @@ from agents.offer_negotiation.models.output_models import (
     ContextSummary,
     DomainKnowledgeItem,
     InformationGap,
+    NegotiationStrategy,
 )
 
 
@@ -31,7 +32,7 @@ class AgentState(BaseModel):
     relevant_domain_knowledge: List[DomainKnowledgeItem] = Field(default_factory=list)
 
     # Strategy
-    strategy: Optional[str] = None
+    strategy: Optional[NegotiationStrategy] = None
     used_deal_fields: Set[str] = Field(default_factory=set)
     decision_basis: List[Dict[str, str]] = Field(default_factory=list)
 
@@ -47,7 +48,7 @@ class AgentState(BaseModel):
         """Convert state to a dictionary for output."""
         result = {
             "deal_id": self.deal_id,
-            "strategy": self.strategy,
+            "strategy": self.strategy.model_dump() if self.strategy else None,
             "rationale": self.rationale,
             "reasoning_steps": self.reasoning_steps,
             "information_needs": self.information_needs,

@@ -9,6 +9,7 @@ from agents.offer_negotiation.models.output_models import (
     DomainKnowledgeItem,
     InformationGap,
     NegotiationStrategy,
+    StrategyRationale,
 )
 
 
@@ -37,7 +38,7 @@ class AgentState(BaseModel):
     decision_basis: List[Dict[str, str]] = Field(default_factory=list)
 
     # Rationale
-    rationale: Optional[str] = None
+    rationale: Optional[StrategyRationale] = None
     reasoning_steps: List[str] = Field(default_factory=list)
     reasoning_output: Dict[str, Any] = Field(default_factory=dict)
 
@@ -49,7 +50,7 @@ class AgentState(BaseModel):
         result = {
             "deal_id": self.deal_id,
             "strategy": self.strategy.model_dump() if self.strategy else None,
-            "rationale": self.rationale,
+            "rationale": self.rationale.model_dump() if self.rationale else None,
             "reasoning_steps": self.reasoning_steps,
             "information_needs": self.information_needs,
             "domain_knowledge": [chunk.model_dump() for chunk in self.domain_knowledge],

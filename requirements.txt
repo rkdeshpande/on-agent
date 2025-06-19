@@ -3,6 +3,7 @@ langchain>=0.1.0
 langchain-community>=0.0.10
 langchain-core>=0.1.10
 langchain-openai>=0.0.5
+langchain-ollama>=0.1.0
 langgraph>=0.0.20
 llama-index>=0.9.48
 chromadb>=0.4.22

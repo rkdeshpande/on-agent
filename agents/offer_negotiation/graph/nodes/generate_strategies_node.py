@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from datetime import UTC, datetime
 from typing import Callable
 
@@ -135,10 +136,12 @@ def create_generate_strategies_node() -> Callable:
                 f"Raw LLM response length: {len(str(response_text))} characters"
             )
 
-            # STEP 5: Parse the LLM response into NegotiationStrategy
-            logger.info("Parsing LLM response into NegotiationStrategy...")
+            # STEP 5: Parse the response into NegotiationStrategy
             try:
-                # Extract JSON from the response (handle cases where LLM adds extra text)
+                # Extract JSON from the response
+                logger.info(f"Raw LLM response length: {len(response_text)} characters")
+
+                # Try to find JSON in the response (handle cases where LLM adds extra text)
                 start_idx = response_text.find("{")
                 end_idx = response_text.rfind("}") + 1
 
@@ -148,38 +151,79 @@ def create_generate_strategies_node() -> Callable:
                 json_str = response_text[start_idx:end_idx]
                 logger.info(f"Extracted JSON string length: {len(json_str)} characters")
 
-                # Parse the JSON response
-                parsed_data = json.loads(json_str)
-                logger.info(
-                    f"Successfully parsed JSON with keys: {list(parsed_data.keys())}"
-                )
+                # Try to fix common JSON issues
+                # 1. Remove any trailing incomplete objects
+                brace_count = 0
+                last_complete_pos = 0
+                for i, char in enumerate(json_str):
+                    if char == "{":
+                        brace_count += 1
+                    elif char == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            last_complete_pos = i + 1
 
-                # Validate that we have the expected strategy keys
-                expected_keys = ["conservative", "moderate", "aggressive"]
-                missing_keys = [key for key in expected_keys if key not in parsed_data]
-                if missing_keys:
-                    raise ValueError(f"Missing required strategy keys: {missing_keys}")
+                if last_complete_pos > 0:
+                    json_str = json_str[:last_complete_pos]
+                    logger.info(f"Fixed JSON string length: {len(json_str)} characters")
 
-                # Create NegotiationStrategy from parsed data
-                negotiation_strategy = NegotiationStrategy(**parsed_data)
+                # 2. Try to complete any incomplete objects
+                if json_str.count("{") > json_str.count("}"):
+                    # Add missing closing braces
+                    missing_braces = json_str.count("{") - json_str.count("}")
+                    json_str += "}" * missing_braces
+                    logger.info(f"Added {missing_braces} missing closing braces")
 
-                # Log strategy generation success
-                conservative_count = len(negotiation_strategy.conservative)
-                moderate_count = len(negotiation_strategy.moderate)
-                aggressive_count = len(negotiation_strategy.aggressive)
-                logger.info(
-                    f"Successfully generated strategies: Conservative({conservative_count}), Moderate({moderate_count}), Aggressive({aggressive_count})"
-                )
+                # Parse the JSON
+                strategy_data = json.loads(json_str)
+                logger.info("Successfully parsed JSON response")
 
-            except (json.JSONDecodeError, ValueError, TypeError) as e:
+                # Convert to NegotiationStrategy model
+                strategy = NegotiationStrategy(**strategy_data)
+                logger.info("Successfully created NegotiationStrategy object")
+
+            except (json.JSONDecodeError, ValueError) as e:
                 logger.error(f"Failed to parse LLM response: {e}")
-                logger.error(f"Raw response: {response.content}")
+                logger.error(f"Raw response: {response_text}")
 
-                # Create empty strategy if parsing fails
-                logger.info("Using empty NegotiationStrategy due to parsing failure")
-                negotiation_strategy = NegotiationStrategy(
-                    conservative=[], moderate=[], aggressive=[]
-                )
+                # Try to extract partial strategies if possible
+                try:
+                    # Look for individual strategy sections
+                    conservative_match = re.search(
+                        r'"conservative":\s*\[(.*?)\]', response_text, re.DOTALL
+                    )
+                    moderate_match = re.search(
+                        r'"moderate":\s*\[(.*?)\]', response_text, re.DOTALL
+                    )
+                    aggressive_match = re.search(
+                        r'"aggressive":\s*\[(.*?)\]', response_text, re.DOTALL
+                    )
+
+                    partial_strategies = {}
+                    if conservative_match:
+                        partial_strategies["conservative"] = []
+                    if moderate_match:
+                        partial_strategies["moderate"] = []
+                    if aggressive_match:
+                        partial_strategies["aggressive"] = []
+
+                    if partial_strategies:
+                        logger.info(
+                            "Created partial strategy with empty arrays due to parsing failure"
+                        )
+                        strategy = NegotiationStrategy(**partial_strategies)
+                    else:
+                        logger.info(
+                            "Using empty NegotiationStrategy due to parsing failure"
+                        )
+                        strategy = NegotiationStrategy()
+
+                except Exception as recovery_error:
+                    logger.error(f"Recovery attempt also failed: {recovery_error}")
+                    logger.info(
+                        "Using empty NegotiationStrategy due to parsing failure"
+                    )
+                    strategy = NegotiationStrategy()
 
             # STEP 6: Add performance metadata
             end_time = datetime.now(UTC)
@@ -189,12 +233,10 @@ def create_generate_strategies_node() -> Callable:
                 end_time,
                 {
                     "strategies_generated": True,
-                    "conservative_recommendations": len(
-                        negotiation_strategy.conservative
-                    ),
-                    "moderate_recommendations": len(negotiation_strategy.moderate),
-                    "aggressive_recommendations": len(negotiation_strategy.aggressive),
-                    "parsing_successful": hasattr(negotiation_strategy, "conservative"),
+                    "conservative_recommendations": len(strategy.conservative),
+                    "moderate_recommendations": len(strategy.moderate),
+                    "aggressive_recommendations": len(strategy.aggressive),
+                    "parsing_successful": hasattr(strategy, "conservative"),
                 },
             )
 
@@ -202,7 +244,7 @@ def create_generate_strategies_node() -> Callable:
             log_state(state, "Output ")
 
             # STEP 7: Update state with the generated strategies
-            state.strategy = negotiation_strategy
+            state.strategy = strategy
             return state
 
         except Exception as e:

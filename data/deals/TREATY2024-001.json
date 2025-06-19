@@ -1,0 +1,38 @@
+{
+  "submission": {
+    "deal_id": "TREATY2024-001",
+    "coverage_terms": "Property Catastrophe Excess of Loss: $30M xs $20M, occurrence basis, reinstatements: 1 paid, 1 free",
+    "risk_profile": "High volatility territory (Midwest), increasing secondary peril exposure, aging residential book",
+    "premium_structure": "Annual flat premium requested at $2.9M, no profit commission",
+    "line_of_business": "Property Catastrophe",
+    "territory": "US Midwest"
+  },
+  "client_history": {
+    "client_id": "KEYSTONE-CAS",
+    "prior_negotiations": [],
+    "relationship_notes": "Treaty partner since 2019; consistent renewal but no major negotiations in prior years. Broker-led submissions.",
+    "claim_summary": "2023: 3 events totaling $22.7M loss to layer; 2021/2022 were loss-free"
+  },
+  "negotiation_context": {
+    "deal_id": "TREATY2024-001",
+    "discussion_notes": [
+      "Submission arrived with partial bordereaux, missing Jan–Mar exposure.",
+      "Client added reinstatement clause for 2024 program.",
+      "Broker has emphasized 'relationship value' but hasn't shared modeled loss estimates yet."
+    ],
+    "offers": [],
+    "objections": []
+  },
+  "comparable_deals": [
+    {
+      "reference_deal_id": "TREATY2023-115",
+      "similarity_reason": "Similar layer, same region, same broker",
+      "outcome_summary": "Premium increased 12% after adding reinstatement clause and showing elevated convective storm risk"
+    },
+    {
+      "reference_deal_id": "TREATY2023-118",
+      "similarity_reason": "Similar carrier size and attachment point",
+      "outcome_summary": "Accepted $3.1M premium with 2 paid reinstatements and detailed PML model"
+    }
+  ]
+} 

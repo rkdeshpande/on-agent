@@ -23,6 +23,7 @@ const TabbedPanel: React.FC<Props> = ({ data }) => {
   console.log('Context summary:', data?.context_summary);
   console.log('Domain knowledge:', data?.relevant_domain_knowledge);
   console.log('Information gaps:', data?.information_gaps);
+  console.log('Rationale:', data?.rationale);
 
   return (
     <section className="mt-8">

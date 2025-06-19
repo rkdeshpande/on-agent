@@ -66,7 +66,7 @@ function App() {
 
         {data?.strategy && (
           <div className="space-y-10">
-            <StrategyTabs strategy={data.strategy} />
+            <StrategyTabs strategy={data.strategy} rationale={data.rationale} />
             <TabbedPanel data={data} />
           </div>
         )}

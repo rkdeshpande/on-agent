@@ -220,7 +220,7 @@ Aggressive Strategy:
                 )
 
                 # Add error metadata
-                add_error_metadata(trace, "json_parsing_error", str(e), response_text)
+                add_error_metadata(trace, e, {"response_text": response_text})
 
             # STEP 6: Update the state with the generated rationale
             logger.info("Updating state with generated rationale...")

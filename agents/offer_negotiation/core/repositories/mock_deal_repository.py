@@ -14,18 +14,22 @@ class MockDealRepository:
 
     def __init__(self):
         """Initialize the repository with sample data."""
-        # Load DEAL123 from JSON using config path
-        deal123_path = config.deals_dir / "DEAL123.json"
-        if deal123_path.exists():
-            with open(deal123_path, "r") as f:
-                deal123 = json.load(f)
-        else:
-            deal123 = None
         self._deals = {
             "DEAL001": SAMPLE_DEAL,
         }
-        if deal123:
-            self._deals["DEAL123"] = deal123
+
+        # Load all JSON files from the deals directory
+        deals_dir = config.deals_dir
+        if deals_dir.exists():
+            for json_file in deals_dir.glob("*.json"):
+                try:
+                    deal_id = json_file.stem  # Get filename without extension
+                    with open(json_file, "r") as f:
+                        deal_data = json.load(f)
+                    self._deals[deal_id] = deal_data
+                    print(f"Loaded deal: {deal_id} from {json_file}")
+                except Exception as e:
+                    print(f"Error loading deal from {json_file}: {e}")
 
     def get_deal(self, deal_id: str) -> Dict[str, Any]:
         """Get a deal by ID.

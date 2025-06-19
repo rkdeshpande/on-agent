@@ -1,0 +1,32 @@
+{
+  "submission": {
+    "deal_id": "TREATY2024-002",
+    "coverage_terms": "Casualty Quota Share: 70% cession, $5M limit per occurrence, ceding commission TBD",
+    "risk_profile": "Fleet trucking program with long-haul exposures and some telematics-based underwriting, targeting mid-size operators",
+    "premium_structure": "Estimated written premium: $12M annually; profit share under discussion",
+    "line_of_business": "Casualty Quota Share",
+    "territory": "Continental US (mostly Midwest and Southeast)"
+  },
+  "client_history": {
+    "client_id": "ATLAS-MGA",
+    "prior_negotiations": [],
+    "relationship_notes": "First-time treaty submission from this MGA; known in the market but no prior ceded programs",
+    "claim_summary": "No prior loss history submitted; portfolio is new for 2024"
+  },
+  "negotiation_context": {
+    "deal_id": "TREATY2024-002",
+    "discussion_notes": [
+      "Submission includes indicative portfolio stats but lacks audited bordereaux",
+      "Broker has not yet discussed target terms or ceding commission expectations"
+    ],
+    "offers": [],
+    "objections": []
+  },
+  "comparable_deals": [
+    {
+      "reference_deal_id": "TREATY2023-211",
+      "similarity_reason": "Small regional MGA with trucking focus; different geography and smaller limit",
+      "outcome_summary": "Placed at 65% cession with 27% ceding commission after underwriter review of fleet safety scores"
+    }
+  ]
+} 
